@@ -1,159 +1,186 @@
 ---
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import { site } from '../data/site';
+import { profile, visibleSections } from '../lib/content';
 import { compact, getStars, monthYear } from '../lib/format';
 
-const research = (await getCollection('research', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-);
-const apps = (await getCollection('apps')).sort((a, b) => b.data.year - a.data.year);
-const oss = await Promise.all(
-  (await getCollection('oss')).map(async (entry) => ({
-    ...entry,
-    stars: await getStars(entry.data.repo, entry.data.stars),
-  })),
-);
-oss.sort((a, b) => b.stars - a.stars);
-const videos = (await getCollection('videos')).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+// Star counts for open-source items are read from GitHub at build time when `repo` is set.
+const sections = await Promise.all(
+  visibleSections.map(async (section) =>
+    section.type === 'oss'
+      ? {
+          ...section,
+          items: await Promise.all(
+            section.items.map(async (item) => ({
+              ...item,
+              stars: item.repo ? await getStars(item.repo, item.stars ?? 0) : item.stars,
+            })),
+          ),
+        }
+      : section,
+  ),
 );
 
-const hasPortrait = existsSync(join(process.cwd(), 'public', site.portrait));
-const mailto = `mailto:${site.workEmail}?subject=${encodeURIComponent('Working together')}`;
+const seen = new Map<string, number>();
+const anchor = (type: string) => {
+  const n = (seen.get(type) ?? 0) + 1;
+  seen.set(type, n);
+  return n === 1 ? type : `${type}-${n}`;
+};
+
+const hasPortrait = existsSync(join(process.cwd(), 'public', profile.portrait));
+const footerLinks = [
+  ['YouTube', profile.links.youtube],
+  ['GitHub', profile.links.github],
+  ['X', profile.links.x],
+].filter(([, url]) => url);
+const meta = (...parts: (string | undefined | false)[]) => parts.filter(Boolean).join(' · ');
+const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank', rel: 'noopener' } : {});
 ---
 
 <Base>
   <main>
     <header class="me in" style="--i:0">
       <div class="avatar">
-        {hasPortrait ? <img src={site.portrait} alt={site.name} width="46" height="46" /> : <span aria-hidden="true">{site.initials}</span>}
+        {hasPortrait ? <img src={profile.portrait} alt={profile.name} width="46" height="46" /> : <span aria-hidden="true">{profile.initials}</span>}
       </div>
       <div>
-        <h1>{site.name}</h1>
-        <p>{site.tagline}</p>
+        <h1>{profile.name}</h1>
+        {profile.tagline && <p>{profile.tagline}</p>}
       </div>
     </header>
 
-    <p class="intro in" style="--i:1" set:html={site.intro} />
-    {site.now && <div class="now in" style="--i:2"><span class="pulse" aria-hidden="true"></span><b>Now</b>{site.now}</div>}
+    {profile.intro && <p class="intro in" style="--i:1" set:html={profile.intro} />}
+    {profile.now && <div class="now in" style="--i:2"><span class="pulse" aria-hidden="true"></span><b>Now</b>{profile.now}</div>}
 
-    {research.length > 0 && (
-      <section id="research" class="in" style="--i:3">
-        <h2>AI Research</h2>
-        <ol class="rows dated">
-          {research.map((post) => (
-            <li>
-              <a class="row" href={post.data.url ?? `/research/${post.id}/`} {...(post.data.url ? { target: '_blank', rel: 'noopener' } : {})}>
-                <span class="t">{post.data.title}</span>
-                <span class="arr" aria-hidden="true">{post.data.url ? '↗' : '→'}</span>
-                <span class="m">{monthYear(post.data.date)}</span>
-              </a>
-            </li>
-          ))}
-        </ol>
-      </section>
-    )}
+    {sections.map((section, i) => {
+      const id = anchor(section.type);
+      const style = `--i:${i + 3}`;
+      const headLink = 'link' in section && section.link?.url ? section.link : null;
+      const heading = (
+        <h2>{section.title}{headLink && <a href={headLink.url} {...external(headLink.url)}>{headLink.label} ↗</a>}</h2>
+      );
 
-    <section id="work" class="in" style="--i:4">
-      <h2>Work with me</h2>
-      <p class="lead">{site.work.lead}</p>
-      <ol class="offers">
-        {site.work.offers.map((offer, i) => (
-          <li class="offer">
-            <span class="n">{String(i + 1).padStart(2, '0')}</span>
-            <div>
-              <div class="ot">{offer.title}<span class="tag">{offer.tag}</span></div>
-              <p>{offer.description}</p>
+      if (section.type === 'research') return (
+        <section id={id} class="in" style={style}>
+          {heading}
+          <ol class="rows dated">
+            {section.items.map((item) => (
+              <li>
+                <a class="row" href={item.url} {...external(item.url)}>
+                  <span class="t">{item.title}</span>
+                  <span class="arr" aria-hidden="true">{/^https?:/.test(item.url) ? '↗' : '→'}</span>
+                  <span class="m">{item.date ? monthYear(item.date) : ''}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      );
+
+      if (section.type === 'work') {
+        const mailto = `mailto:${section.email}?subject=${encodeURIComponent('Working together')}`;
+        return (
+          <section id={id} class="in" style={style}>
+            {heading}
+            {section.lead && <p class="lead">{section.lead}</p>}
+            <ol class="offers">
+              {section.items.map((offer, n) => (
+                <li class="offer">
+                  <span class="n">{String(n + 1).padStart(2, '0')}</span>
+                  <div>
+                    <div class="ot">{offer.title}{offer.tag && <span class="tag">{offer.tag}</span>}</div>
+                    <p>{offer.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <div class="cta">
+              <a class="mail" href={mailto}>{section.cta}<span aria-hidden="true">→</span></a>
+              <button class="copy addr" type="button" data-email={section.email}>{section.email}<span>copy</span></button>
             </div>
-          </li>
-        ))}
-      </ol>
-      <div class="cta">
-        <a class="mail" href={mailto}>{site.work.cta}<span aria-hidden="true">→</span></a>
-        <button class="copy addr" type="button" data-email={site.workEmail}>{site.workEmail}<span>copy</span></button>
-      </div>
-    </section>
+          </section>
+        );
+      }
 
-    {apps.length > 0 && (
-    <section id="apps" class="in" style="--i:5">
-      <h2>Apps</h2>
-      <div class="cards">
-        {apps.map(({ data }) => (
-          <a class="card" href={data.url} style={`--tint:${data.tint}`}>
-            <div class="tile">
-              <span class="icon"><img src={data.icon} alt="" width="68" height="68" loading="lazy" /></span>
-              <em>{data.platform}</em>
-            </div>
-            <div class="ct">{data.name}</div>
-            <div class="cm">{data.description} · {data.year}</div>
-          </a>
-        ))}
-      </div>
-    </section>
-    )}
-
-    {oss.length > 0 && (
-    <section id="oss" class="in" style="--i:6">
-      <h2>Open source {site.links.github && <a href={site.links.github}>GitHub ↗</a>}</h2>
-      <ol class="rows">
-        {oss.map((item) => (
-          <li>
-            <a class="row" href={item.data.url} data-pv={item.data.snippet ? item.id : undefined}>
-              <span class="t">{item.data.name}</span>
-              <span class="d">{item.data.description}</span>
-              <span class="m">
-                <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 .8l2.2 4.6 5 .7-3.6 3.5.9 5L8 12.2 3.5 14.6l.9-5L.8 6.1l5-.7z" /></svg>
-                {compact(item.stars)}
-              </span>
-            </a>
-          </li>
-        ))}
-      </ol>
-    </section>
-    )}
-
-    {videos.length > 0 && (
-    <section id="videos" class="in" style="--i:7">
-      <h2>Videos {site.links.youtube && <a href={site.links.youtube}>YouTube ↗</a>}</h2>
-      <div class="cards">
-        {videos.map(({ data }) => (
-          <a class="card" href={data.url}>
-            <div class="thumb">
-              {data.youtubeId ? (
-                <img src={`https://i.ytimg.com/vi/${data.youtubeId}/hqdefault.jpg`} alt="" loading="lazy" />
-              ) : (
-                <div class="th" style={`background:${data.thumb?.bg ?? '#18181a'};color:${data.thumb?.fg ?? '#fff'}`}>
-                  <b>{data.thumb?.text ?? data.title}</b>
+      if (section.type === 'apps') return (
+        <section id={id} class="in" style={style}>
+          {heading}
+          <div class="cards apps">
+            {section.items.map((app) => (
+              <a class="card" href={app.url} style={`--tint:${app.tint}`} {...external(app.url)}>
+                <div class="tile">
+                  <span class="icon"><img src={app.icon} alt="" width="68" height="68" loading="lazy" /></span>
+                  {app.platform && <em>{app.platform}</em>}
                 </div>
-              )}
-              <em>{data.duration}</em>
-            </div>
-            <div class="ct">{data.title}</div>
-            <div class="cm">{data.views} views · {monthYear(data.date)}</div>
-          </a>
-        ))}
-      </div>
-    </section>
-    )}
+                <div class="ct">{app.name}</div>
+                <div class="cm">{meta(app.description, app.year !== undefined && String(app.year))}</div>
+              </a>
+            ))}
+          </div>
+        </section>
+      );
 
-    <footer class="in" style="--i:8">
+      if (section.type === 'oss') return (
+        <section id={id} class="in" style={style}>
+          {heading}
+          <ol class="rows">
+            {section.items.map((item, n) => (
+              <li>
+                <a class="row" href={item.url} data-pv={item.snippet ? `${id}-${n}` : undefined} {...external(item.url)}>
+                  <span class="t">{item.name}</span>
+                  <span class="d">{item.description}</span>
+                  <span class="m">
+                    {item.stars !== undefined && (
+                      <>
+                        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 .8l2.2 4.6 5 .7-3.6 3.5.9 5L8 12.2 3.5 14.6l.9-5L.8 6.1l5-.7z" /></svg>
+                        {compact(item.stars)}
+                      </>
+                    )}
+                  </span>
+                </a>
+                {item.snippet && <template id={`pv-${id}-${n}`}><pre class="code">{item.snippet}</pre></template>}
+              </li>
+            ))}
+          </ol>
+        </section>
+      );
+
+      if (section.type === 'videos') return (
+        <section id={id} class="in" style={style}>
+          {heading}
+          <div class="cards videos">
+            {section.items.map((video) => (
+              <a class="card" href={video.url} {...external(video.url)}>
+                <div class="thumb">
+                  {video.youtubeId ? (
+                    <img src={`https://i.ytimg.com/vi/${video.youtubeId}/hqdefault.jpg`} alt="" loading="lazy" />
+                  ) : (
+                    <div class="th" style={`background:${video.thumb?.bg ?? '#18181a'};color:${video.thumb?.fg ?? '#fff'}`}>
+                      <b>{video.thumb?.text ?? video.title}</b>
+                    </div>
+                  )}
+                  {video.duration && <em>{video.duration}</em>}
+                </div>
+                <div class="ct">{video.title}</div>
+                <div class="cm">{meta(video.views && `${video.views} views`, video.date && monthYear(video.date))}</div>
+              </a>
+            ))}
+          </div>
+        </section>
+      );
+    })}
+
+    <footer class="in" style={`--i:${sections.length + 3}`}>
       <div class="links">
-        {site.links.youtube && <a href={site.links.youtube}>YouTube</a>}
-        {site.links.github && <a href={site.links.github}>GitHub</a>}
-        {site.links.x && <a href={site.links.x}>X</a>}
-        <button class="copy" type="button" data-email={site.email}>Email <span>copy</span></button>
+        {footerLinks.map(([label, url]) => <a href={url} target="_blank" rel="noopener">{label}</a>)}
+        <button class="copy" type="button" data-email={profile.email}>Email <span>copy</span></button>
       </div>
-      {site.placeholderNote && <p class="fine">{site.placeholderNote}</p>}
     </footer>
   </main>
 
   <div class="pv" id="pv" aria-hidden="true"><div class="pv-in" id="pv-in"></div></div>
-  {oss.filter((item) => item.data.snippet).map((item) => (
-    <template id={`pv-${item.id}`}><pre class="code">{item.data.snippet}</pre></template>
-  ))}
 </Base>
 
 <script>
@@ -626,17 +653,17 @@ const mailto = `mailto:${site.workEmail}?subject=${encodeURIComponent('Working t
     .dated .arr {
       display: none;
     }
-    #videos .cards {
+    .cards.videos {
       grid-template-columns: 1fr;
     }
-    #apps .cards {
+    .cards.apps {
       gap: 18px 12px;
     }
     .icon {
       width: 54px;
       height: 54px;
     }
-    #apps .cm {
+    .cards.apps .cm {
       font-size: 12.5px;
     }
   }

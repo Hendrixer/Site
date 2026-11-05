@@ -1,0 +1,133 @@
+// Reads and validates content.json at the repo root.
+// The page renders sections in the order they appear in `sections`,
+// and items in the order they appear in each section's `items`.
+// A section with no items (or "hidden": true) isn't rendered.
+import { z } from 'astro/zod';
+import raw from '../../content.json';
+
+const link = z.strictObject({ label: z.string(), url: z.string().default('') });
+
+const research = z.strictObject({
+  type: z.literal('research'),
+  title: z.string().default('AI Research'),
+  hidden: z.boolean().default(false),
+  items: z
+    .array(
+      z.strictObject({
+        title: z.string(),
+        url: z.string(),
+        date: z.coerce.date().optional(),
+        summary: z.string().optional(),
+      }),
+    )
+    .default([]),
+});
+
+const work = z.strictObject({
+  type: z.literal('work'),
+  title: z.string().default('Work with me'),
+  hidden: z.boolean().default(false),
+  lead: z.string().default(''),
+  email: z.string(),
+  cta: z.string().default('Get in touch'),
+  items: z
+    .array(
+      z.strictObject({
+        title: z.string(),
+        tag: z.string().optional(),
+        description: z.string(),
+      }),
+    )
+    .default([]),
+});
+
+const apps = z.strictObject({
+  type: z.literal('apps'),
+  title: z.string().default('Apps'),
+  hidden: z.boolean().default(false),
+  link: link.optional(),
+  items: z
+    .array(
+      z.strictObject({
+        name: z.string(),
+        description: z.string(),
+        url: z.string(),
+        icon: z.string(),
+        tint: z.string().default('#8a8a85'),
+        platform: z.string().optional(),
+        year: z.union([z.number(), z.string()]).optional(),
+      }),
+    )
+    .default([]),
+});
+
+const oss = z.strictObject({
+  type: z.literal('oss'),
+  title: z.string().default('Open source'),
+  hidden: z.boolean().default(false),
+  link: link.optional(),
+  items: z
+    .array(
+      z.strictObject({
+        name: z.string(),
+        description: z.string(),
+        url: z.string(),
+        repo: z.string().optional(),
+        stars: z.number().optional(),
+        snippet: z.string().optional(),
+      }),
+    )
+    .default([]),
+});
+
+const videos = z.strictObject({
+  type: z.literal('videos'),
+  title: z.string().default('Videos'),
+  hidden: z.boolean().default(false),
+  link: link.optional(),
+  items: z
+    .array(
+      z.strictObject({
+        title: z.string(),
+        url: z.string(),
+        youtubeId: z.string().optional(),
+        date: z.coerce.date().optional(),
+        duration: z.string().optional(),
+        views: z.string().optional(),
+        thumb: z.strictObject({ text: z.string(), bg: z.string(), fg: z.string() }).optional(),
+      }),
+    )
+    .default([]),
+});
+
+const schema = z.strictObject({
+  profile: z.strictObject({
+    name: z.string(),
+    initials: z.string().default(''),
+    tagline: z.string().default(''),
+    description: z.string().default(''),
+    intro: z.string().default(''),
+    now: z.string().default(''),
+    email: z.string(),
+    portrait: z.string().default('/portrait.jpg'),
+    links: z
+      .object({
+        youtube: z.string().default(''),
+        github: z.string().default(''),
+        x: z.string().default(''),
+      })
+      .default({ youtube: '', github: '', x: '' }),
+  }),
+  sections: z.array(z.discriminatedUnion('type', [research, work, apps, oss, videos])),
+});
+
+const parsed = schema.safeParse(raw);
+if (!parsed.success) {
+  throw new Error(`content.json is invalid:\n${z.prettifyError(parsed.error)}`);
+}
+
+export const content = parsed.data;
+export const profile = content.profile;
+export type Section = (typeof content.sections)[number];
+
+export const visibleSections = content.sections.filter((s) => !s.hidden && s.items.length > 0);

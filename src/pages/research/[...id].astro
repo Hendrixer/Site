@@ -1,11 +1,11 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { site } from '../../data/site';
+import { profile } from '../../lib/content';
 import { longDate } from '../../lib/format';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('research', ({ data }) => !data.draft && !data.url);
+  const posts = await getCollection('research', ({ data }) => !data.draft);
   return posts.map((post) => ({ params: { id: post.id }, props: { post } }));
 }
 
@@ -15,7 +15,7 @@ const { Content } = await render(post);
 
 <Base title={post.data.title} description={post.data.summary}>
   <main>
-    <nav class="back in" style="--i:0"><a href="/">← {site.name}</a></nav>
+    <nav class="back in" style="--i:0"><a href="/">← {profile.name}</a></nav>
     <header class="in" style="--i:1">
       <p class="eyebrow">AI Research · <time datetime={post.data.date.toISOString()}>{longDate(post.data.date)}</time></p>
       <h1>{post.data.title}</h1>

@@ -7,23 +7,50 @@ Personal site built with Astro and served by a Cloudflare Worker, which also run
 ```bash
 npm run dev      # local site at http://localhost:4321
 npm run build    # static build into ./dist
-npm run deploy   # build, then deploy the Worker to mossscott.com
+npm run deploy   # build, then deploy the Worker to mossscott.com (pushes to main do this automatically)
 ```
 
 ## Content
 
-Every section stays hidden until it has at least one entry, so the homepage only shows what's real.
+Everything on the homepage comes from [`content.json`](content.json).
 
-| What | Where |
-| --- | --- |
-| Name, intro, Now line, links, Work with me copy | `src/data/site.ts` |
-| AI research posts | one Markdown file per post in `src/content/research/` (set `url` to link out instead) |
-| Apps (cards with icons) | `src/content/apps.json`, icons in `public/icons/` |
-| Open source | `src/content/oss.json` (set `repo` to read star counts from GitHub at build time) |
-| Videos | `src/content/videos.json` (set `youtubeId` to use the real thumbnail) |
-| Portrait | `public/portrait.jpg` (square), replaces the initials |
+- `profile` holds your name, intro, email and social links. The intro can contain HTML links. Leave a link empty to hide it.
+- `sections` is the page, top to bottom. Reorder the array to reorder the page, and reorder a section's `items` to reorder what's inside it. Nothing is sorted automatically.
+- A section with an empty `items` list isn't shown. Set `"hidden": true` to hide one that has items.
+- `title` is the heading text. `link` adds a small link next to the heading (for example, your GitHub profile).
 
-The field definitions are in `src/content.config.ts`. A CMS can replace any of these files with an Astro content loader without changing the page.
+Item fields for each section type (`?` means optional):
+
+```jsonc
+// "research": rows with a date
+{ "title": "Do agents need memory?", "url": "https://...", "date?": "2026-03" }
+
+// "work": the offerings in Work with me (the section also takes lead, email and cta)
+{ "title": "Safety and evaluation", "tag?": "AI safety research", "description": "..." }
+
+// "apps": cards with an icon. Put icons in public/icons/
+{ "name": "Lull", "description": "...", "url": "https://...", "icon": "/icons/lull.png",
+  "tint?": "#F05A36", "platform?": "iOS", "year?": 2026 }
+
+// "oss": rows with stars. With "repo" set, stars come from GitHub at build time.
+// "snippet" shows a code preview when hovering the row.
+{ "name": "agent-kit", "description": "...", "url": "https://github.com/...",
+  "repo?": "owner/name", "stars?": 4212, "snippet?": "npm i agent-kit" }
+
+// "videos": cards. With "youtubeId" set, the real thumbnail is used.
+{ "title": "...", "url": "https://youtube.com/watch?v=...", "youtubeId?": "...",
+  "date?": "2026-02-10", "duration?": "18:42", "views?": "148k" }
+```
+
+The build checks `content.json` and stops with a clear message if a field is missing or misspelled. The rules live in [`src/lib/content.ts`](src/lib/content.ts).
+
+To host a research write-up on the site, add a Markdown file to `src/content/research/` (with `title`, `date` and `summary` at the top), then add a research item pointing at `/research/<filename>/`.
+
+Put a square photo at `public/portrait.jpg` and it replaces the initials.
+
+## Deploys
+
+Pushing to `main` on GitHub rebuilds and deploys the site through Cloudflare Workers Builds. To deploy by hand, run `npm run deploy`.
 
 ## Email inbox
 
