@@ -15,6 +15,7 @@ npm run deploy   # build, then deploy the Worker to mossscott.com (pushes to mai
 Everything on the homepage comes from [`content.json`](content.json).
 
 - `profile` holds your name, intro, email and social links. The intro can contain HTML links. Leave a link empty to hide it.
+- `brands` defines inline logos. Write `{netflix}` or `{yc}` in the intro or in Work with me's `lead` and `body`, and it renders as a small square logo followed by the name. Add a brand by putting a square image in `public/logos/` and an entry here.
 - `sections` is the page, top to bottom. Reorder the array to reorder the page, and reorder a section's `items` to reorder what's inside it. Nothing is sorted automatically.
 - A section with an empty `items` list isn't shown. Set `"hidden": true` to hide one that has items.
 - `title` is the heading text. `link` adds a small link next to the heading (for example, your GitHub profile).
@@ -25,7 +26,8 @@ Item fields for each section type (`?` means optional):
 // "research": rows with a date
 { "title": "Do agents need memory?", "url": "https://...", "date?": "2026-03" }
 
-// "work": the offerings in Work with me (the section also takes lead, email and cta)
+// "work": shown even with no items. Takes "lead" (the large pitch line), "body",
+// "email" and "cta". Items are an optional list of offerings:
 { "title": "Safety and evaluation", "tag?": "AI safety research", "description": "..." }
 
 // "courses": rows with square course art. Put images in public/courses/

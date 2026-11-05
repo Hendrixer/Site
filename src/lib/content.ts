@@ -28,6 +28,7 @@ const work = z.strictObject({
   title: z.string().default('Work with me'),
   hidden: z.boolean().default(false),
   lead: z.string().default(''),
+  body: z.string().default(''),
   email: z.string(),
   cta: z.string().default('Get in touch'),
   items: z
@@ -121,7 +122,11 @@ const courses = z.strictObject({
     .default([]),
 });
 
+const brand = z.strictObject({ name: z.string(), logo: z.string() });
+
 const schema = z.strictObject({
+  // Inline logos. Write {key} in the intro or Work with me text, e.g. {netflix}.
+  brands: z.record(z.string(), brand).default({}),
   profile: z.strictObject({
     name: z.string(),
     initials: z.string().default(''),
@@ -155,3 +160,15 @@ export type Section = (typeof content.sections)[number];
 export const visibleSections = content.sections.filter(
   (s) => !s.hidden && (s.items.length > 0 || s.type === 'work'),
 );
+
+const escapeAttr = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+// Replaces {key} tokens with the brand's square logo and name.
+// Text fields that go through this may also contain plain HTML links.
+export function rich(text: string): string {
+  return text.replace(/\{([a-z0-9-]+)\}/gi, (match, key: string) => {
+    const b = content.brands[key];
+    if (!b) return match;
+    return `<span class="brand"><img class="logo" src="${escapeAttr(b.logo)}" alt="" width="18" height="18" />${b.name}</span>`;
+  });
+}

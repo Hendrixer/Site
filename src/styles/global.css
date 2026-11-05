@@ -121,6 +121,22 @@ h2 a:hover {
   color: var(--text);
 }
 
+/* Inline square logos, rendered from {key} tokens in content.json */
+.brand {
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--text);
+}
+.logo {
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  margin: 0 0.32em 0 0.06em;
+  border-radius: 22%;
+  vertical-align: -0.17em;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
 .copy {
   appearance: none;
   background: none;

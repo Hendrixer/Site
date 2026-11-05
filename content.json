@@ -1,10 +1,20 @@
 {
+  "brands": {
+    "netflix": {
+      "name": "Netflix",
+      "logo": "/logos/netflix.svg"
+    },
+    "yc": {
+      "name": "Y Combinator",
+      "logo": "/logos/yc.svg"
+    }
+  },
   "profile": {
     "name": "Scott Moss",
     "initials": "SM",
-    "tagline": "Builds products. Teaches on Master.dev and YouTube.",
-    "description": "Scott Moss builds apps and open-source tools, does AI research, and explains how it all works on YouTube.",
-    "intro": "I build apps and open-source tools, do AI research, and teach how it all works in courses on Master.dev and on YouTube. I also help companies put AI to work, safely.",
+    "tagline": "AI engineer, moving into AI research",
+    "description": "Scott Moss is an AI engineer moving into AI research. He builds AI systems, teaches on Master.dev and works with teams as an applied AI architect.",
+    "intro": "I’ve spent years building AI systems that run in production. Now I’m moving into research, focused on how those systems fail, how to measure them and how to make them safe. I teach what I learn on Master.dev.",
     "now": "",
     "email": "hello@mossscott.com",
     "portrait": "/portrait.jpg",
@@ -105,9 +115,10 @@
     {
       "type": "work",
       "title": "Work with me",
-      "lead": "I do applied AI consulting.",
+      "lead": "I’m an applied AI architect. I’ve built AI systems at {netflix} and as a two-time {yc} founder.",
+      "body": "If your team has AI demos that never reach production, or production AI it doesn’t trust, I can help. I design the architecture, set up the evals and work alongside your engineers until it ships and they own it.",
       "email": "work@mossscott.com",
-      "cta": "Tell me what you’re working on"
+      "cta": "Tell me what you’re building"
     }
   ]
 }
