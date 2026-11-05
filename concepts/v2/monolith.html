@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monolith</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: a full-bleed WebGL void. UI lives only in the four corners and on the face of whichever slab is turned toward you. */
+  --void:#050505;
+  --stone:#ebe5da;
+  --stone-2:#a8a297;
+  --stone-3:#6e6961;
+  --warm:#ffb46b;
+  --line:rgba(235,229,218,.16);
+  --ui:"Archivo",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--void);color:var(--stone);overflow:hidden;font-family:var(--ui);-webkit-font-smoothing:antialiased}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}
+body.hover #gl{cursor:pointer}
+.veil{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.55) 100%)}
+.grain{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.05;background-size:180px 180px;animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{background-position:0 0}20%{background-position:-37px 23px}40%{background-position:29px -51px}60%{background-position:-61px -17px}80%{background-position:43px 41px}100%{background-position:0 0}}
+
+.corner{position:fixed;z-index:6;font:500 11px/1.5 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--stone-2)}
+.tl{top:22px;left:26px}.tr{top:22px;right:26px}.bl{bottom:22px;left:26px}.br{bottom:22px;right:26px;text-align:right}
+.name,.tr button{appearance:none;background:none;border:0;padding:0;margin:0;color:var(--stone);cursor:pointer;font:600 14px/1 var(--ui);font-stretch:125%;letter-spacing:.2em;text-transform:uppercase}
+.tr button{font:500 11px/1 var(--mono);letter-spacing:.16em;color:var(--stone-2);padding:6px 0;border-bottom:1px solid var(--line)}
+.tr button:hover,.name:hover{color:#fff}
+.bl b{font-weight:500;color:var(--stone);margin-right:10px}
+.br small{display:block;color:var(--stone-3);font-size:10px;letter-spacing:.1em;margin-top:4px}
+button:focus-visible,input:focus-visible+span,label:focus-within{outline:1px solid var(--warm);outline-offset:4px}
+
+.panel{position:fixed;left:0;top:0;width:10px;height:10px;z-index:4;container-type:size;opacity:0;pointer-events:none;transition:opacity .45s ease;will-change:transform}
+.panel.show{opacity:1;pointer-events:auto}
+.pin{position:absolute;inset:0;padding:9cqw 9cqw 17cqh;display:flex;flex-direction:column;overflow:auto;scrollbar-width:none;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.pin::-webkit-scrollbar{display:none}
+.p-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font:500 max(10px,3.3cqw)/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--stone-2)}
+.back{appearance:none;background:none;border:0;padding:4px 0;color:var(--stone);font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer}
+.back:hover{color:#fff}
+.p-title{font:700 16cqw/.88 var(--ui);font-stretch:66%;letter-spacing:.005em;text-transform:uppercase;margin:8cqh 0 0;text-wrap:balance}
+.p-list{list-style:none;margin:auto 0 0;padding:0;border-top:1px solid var(--line)}
+.p-list button{appearance:none;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;text-align:left;width:100%;cursor:pointer;display:grid;grid-template-columns:9cqw minmax(0,1fr);gap:2cqw;padding:4cqw 0;transition:padding .35s cubic-bezier(.2,.8,.2,1)}
+.p-list button:hover,.p-list button:focus-visible{padding-left:2.5cqw}
+.i-n{font:500 max(10px,3.2cqw)/1.7 var(--mono);color:var(--stone-3)}
+.i-t{display:block;font:600 max(15px,7.2cqw)/1.04 var(--ui);font-stretch:84%;color:var(--stone)}
+.i-l{display:block;font:400 max(12px,4.2cqw)/1.35 var(--ui);color:var(--stone-2);margin-top:1.4cqw}
+.i-m{display:block;font:500 max(10px,3.1cqw)/1.4 var(--mono);letter-spacing:.04em;color:var(--warm);margin-top:1.8cqw}
+.p-list button:hover .i-t{color:#fff}
+.d-kick{margin-top:8cqh;font:500 max(10px,3.2cqw)/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--warm)}
+.d-title{font:700 14cqw/.9 var(--ui);font-stretch:66%;text-transform:uppercase;margin:3cqw 0 6cqw;text-wrap:balance}
+.d-title.long{font-size:10.5cqw}
+.d-desc{font:400 max(13px,4.5cqw)/1.5 var(--ui);color:var(--stone);margin:0}
+.d-stats{margin:auto 0 0;border-top:1px solid var(--line)}
+.d-stats div{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:3cqw 0;border-bottom:1px solid var(--line)}
+.d-stats dt{font:500 max(10px,3cqw)/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--stone-3)}
+.d-stats dd{margin:0;font:600 max(14px,5.8cqw)/1 var(--ui);font-stretch:84%;font-variant-numeric:tabular-nums}
+.d-link{margin-top:5cqw;font:500 max(10px,3.3cqw)/1 var(--mono);letter-spacing:.06em;color:var(--stone-2)}
+
+.about{position:fixed;z-index:5;right:clamp(24px,7vw,120px);top:50%;width:min(390px,36vw);transform:translateY(-46%);opacity:0;pointer-events:none;transition:opacity .5s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+.about.show{opacity:1;pointer-events:auto;transform:translateY(-50%)}
+.a-kick{font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--stone-3)}
+.a-title{font:700 clamp(44px,4.8vw,70px)/.86 var(--ui);font-stretch:64%;text-transform:uppercase;margin:14px 0 18px}
+.a-bio{font:400 17px/1.55 var(--ui);color:var(--stone);margin:0;min-height:6.2em;max-width:36ch;transition:opacity .18s}
+.a-bio.tick{opacity:.35}
+.tars{margin-top:22px;padding:16px 16px 14px;border:1px solid #2b2926;border-radius:5px;background:linear-gradient(#151514,#0d0d0c);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 24px 48px -24px #000;
+  background-image:radial-gradient(circle at 8px 8px,#3d3a36 1.6px,transparent 2.2px),radial-gradient(circle at calc(100% - 8px) 8px,#3d3a36 1.6px,transparent 2.2px),radial-gradient(circle at 8px calc(100% - 8px),#3d3a36 1.6px,transparent 2.2px),radial-gradient(circle at calc(100% - 8px) calc(100% - 8px),#3d3a36 1.6px,transparent 2.2px),linear-gradient(#151514,#0d0d0c)}
+.t-head{display:flex;justify-content:space-between;font:500 9.5px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--stone-3);margin:0 6px 16px}
+.t-head i{font-style:normal;color:#7fd29a}
+.t-row{display:flex;justify-content:space-between;align-items:center;font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--stone-2);margin:0 2px}
+.t-row output{font:500 14px/1 var(--mono);letter-spacing:.06em;color:var(--warm);text-shadow:0 0 10px rgba(255,170,90,.5);background:#070605;border:1px solid #241e18;border-radius:3px;padding:5px 7px;font-variant-numeric:tabular-nums}
+.t-ctl{margin:4px 0 14px}
+.t-ctl:last-of-type{margin-bottom:6px}
+input[type=range]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:30px;margin:0;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:#050505;border:1px solid #1f1d1b;box-shadow:inset 0 1px 3px #000,0 1px 0 rgba(255,255,255,.05)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:26px;margin-top:-11px;border-radius:2px;border:0;background:linear-gradient(90deg,#7f786e,#d4cdc1 40%,#f1ebdf 50%,#d4cdc1 60%,#7f786e);box-shadow:0 3px 7px rgba(0,0,0,.75),inset 0 0 0 1px rgba(0,0,0,.4)}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:#050505;border:1px solid #1f1d1b;box-shadow:inset 0 1px 3px #000}
+input[type=range]::-moz-range-thumb{width:14px;height:26px;border-radius:2px;border:0;background:linear-gradient(90deg,#7f786e,#d4cdc1 40%,#f1ebdf 50%,#d4cdc1 60%,#7f786e);box-shadow:0 3px 7px rgba(0,0,0,.75)}
+input[type=range]:focus-visible{outline:1px solid var(--warm);outline-offset:3px}
+.ticks{display:flex;justify-content:space-between;margin:0 7px;height:7px}
+.ticks span{width:1px;height:4px;background:#3e3a35}
+.ticks span:nth-child(5n+1){height:7px;background:#5a554e}
+.t-note{min-height:14px;font:500 10px/1.4 var(--mono);letter-spacing:.08em;color:var(--warm);margin:8px 2px 0}
+.photo{display:inline-flex;align-items:center;gap:10px;margin-top:18px;font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--stone);cursor:pointer;padding:10px 14px;border:1px solid var(--line);border-radius:3px;transition:border-color .2s,color .2s}
+.photo:hover{border-color:var(--stone-2);color:#fff}
+.photo input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.a-fine{font:400 12px/1.5 var(--mono);color:var(--stone-3);margin:12px 0 0;max-width:38ch}
+
+.drop{position:fixed;inset:14px;z-index:9;border:1px dashed var(--warm);border-radius:12px;display:grid;place-items:center;font:500 12px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--warm);background:rgba(5,5,5,.55);opacity:0;pointer-events:none;transition:opacity .2s}
+.drop.on{opacity:1}
+.loader{position:fixed;inset:0;z-index:8;display:grid;place-items:center;background:var(--void);font:500 11px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--stone-3);transition:opacity .9s ease}
+.loader.out{opacity:0;pointer-events:none}
+.sr{position:fixed;left:50%;bottom:22px;z-index:7;display:flex;gap:6px;transform:translateX(-50%);clip-path:inset(50%);opacity:0}
+.sr:focus-within{clip-path:none;opacity:1}
+.sr button{appearance:none;background:#0d0d0c;border:1px solid var(--line);color:var(--stone);font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:9px 12px;border-radius:3px;cursor:pointer}
+#fallback{position:fixed;inset:0;overflow:auto;padding:80px 26px;z-index:7;background:var(--void)}
+#fallback h1{font:700 64px/.9 var(--ui);font-stretch:64%;text-transform:uppercase;margin:0 0 40px}
+#fallback h2{font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--stone-3);margin:32px 0 12px}
+#fallback p{margin:6px 0;color:var(--stone-2)}
+
+@media (max-width:760px){
+  .tl{top:18px;left:18px}.tr{top:18px;right:18px}.bl{bottom:18px;left:18px}.br{bottom:18px;right:18px}
+  .name{font-size:12px;letter-spacing:.16em}
+  .br{max-width:44vw}
+  .about{left:14px;right:14px;width:auto;top:auto;bottom:64px;max-height:52vh;overflow:auto;transform:translateY(14px);background:rgba(6,6,6,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:8px;padding:18px}
+  .about.show{transform:none}
+  body.m-about .br{display:none}
+  .a-title{font-size:40px;margin:10px 0 12px}
+  .a-bio{font-size:15px;min-height:0}
+}
+@media (prefers-reduced-motion:reduce){.grain{animation:none}*{transition-duration:.01ms!important}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="veil"></div>
+<div class="grain" id="grain"></div>
+
+<div class="corner tl"><button class="name" id="home" type="button">Scott Moss</button></div>
+<div class="corner tr"><button id="aboutBtn" type="button">About</button></div>
+<div class="corner bl" id="where"><b>00</b>Index</div>
+<div class="corner br"><span id="hint">Move to light the stone · Click a slab</span><small>Placeholder projects, numbers and portrait</small></div>
+
+<div class="panel" id="panel"></div>
+
+<aside class="about" id="about" aria-label="About">
+  <div class="a-kick">About · in relief</div>
+  <h2 class="a-title">Scott Moss</h2>
+  <p class="a-bio" id="bio"></p>
+  <div class="tars">
+    <div class="t-head"><span>Settings</span><span><i>●</i> Calibrated</span></div>
+    <div class="t-row"><label for="honesty">Honesty</label><output id="ho" for="honesty">090%</output></div>
+    <div class="t-ctl"><input type="range" id="honesty" min="0" max="100" step="5" value="90"><div class="ticks"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+    <div class="t-row"><label for="humor">Humor</label><output id="hu" for="humor">075%</output></div>
+    <div class="t-ctl"><input type="range" id="humor" min="0" max="100" step="5" value="75"><div class="ticks"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+    <div class="t-note" id="tnote"></div>
+  </div>
+  <label class="photo"><input type="file" id="file" accept="image/*">Use your photo</label>
+  <p class="a-fine">Drop a photo anywhere to carve it into the stone. It never leaves your browser.</p>
+</aside>
+
+<nav class="sr" aria-label="Sections">
+  <button type="button" data-k="0">1 Apps</button><button type="button" data-k="1">2 Open source</button><button type="button" data-k="2">3 Research</button><button type="button" data-k="3">4 Video</button><button type="button" data-k="about">About</button>
+</nav>
+
+<div class="drop" id="drop">Drop to carve</div>
+<div class="loader" id="loader">Casting the stone</div>
+<div id="fallback" hidden></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { Reflector } from 'three/addons/objects/Reflector.js';
+
+const $ = s => document.querySelector(s);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+const pad = n => String(n).padStart(2, '0');
+
+const DATA = [
+  { name: 'Apps', items: [
+    { t: 'Lull', kind: 'iOS app · 2026', line: 'A focus timer that learns your rhythm', meta: 'Shipped Mar 2026 · 12,408 users', desc: 'One ring, one button. Lull notices when you actually focus and suggests the next session at the right moment. Everything else was cut.', stats: [['Users', '12,408'], ['Rating', '4.8'], ['Shipped', 'Mar 2026']], link: 'lull.app' },
+    { t: 'Margin', kind: 'Web app · 2026', line: 'A script editor built for YouTube', meta: 'Public beta · 2,130 writers', desc: 'Write, time and annotate video scripts in one place. Notes in the margin become B-roll cues, and every draft knows how long it takes to read aloud.', stats: [['Writers', '2,130'], ['Scripts', '18,400'], ['Status', 'Public beta']], link: 'margin.app' },
+    { t: 'Tidal', kind: 'macOS app · 2026', line: 'A read-later queue sorted by attention span', meta: 'TestFlight · 640 testers', desc: 'Saves articles and sorts them by how much focus they need, so a five-minute gap gets a five-minute read.', stats: [['Testers', '640'], ['Started', 'Jul 2026'], ['Status', 'TestFlight']], link: 'tidal.app' }
+  ]},
+  { name: 'Open source', items: [
+    { t: 'agent-kit', kind: 'Library · TypeScript', line: 'Small primitives for tool-using agents', meta: '4,212 stars · MIT', desc: 'Plans, tools, memory and traces as plain functions. No framework, no magic, and every step is inspectable.', stats: [['Stars', '4,212'], ['Weekly installs', '38k'], ['License', 'MIT']], link: 'agent-kit.dev' },
+    { t: 'trace-view', kind: 'Tool · 2026', line: 'A timeline viewer for agent runs', meta: '860 stars · MIT', desc: 'Drop in a trace and scrub through every plan, tool call and token like footage on a timeline.', stats: [['Stars', '860'], ['Contributors', '14'], ['License', 'MIT']], link: 'trace-view.dev' },
+    { t: 'mdx-press', kind: 'CLI · 2025', line: 'Markdown to print-ready books', meta: '1,180 stars · MIT', desc: 'Turns a folder of MDX into a typeset PDF with real margins, running heads and a table of contents.', stats: [['Stars', '1,180'], ['Releases', '22'], ['License', 'MIT']], link: 'mdx.press' }
+  ]},
+  { name: 'Research', items: [
+    { t: 'Do agents need memory?', kind: 'Research note · Mar 2026', line: 'Three memory setups, one surprising result', meta: 'Mar 2026 · 40 tasks', desc: 'The same 40 multi-step tasks against no memory, a scratchpad and retrieval. Retrieval won. The scratchpad captured 71% of the gain for a tenth of the tokens.', stats: [['Tasks', '40'], ['Setups', '3'], ['Best', '72% success']], link: 'notes / agent-memory' },
+    { t: 'Tool choice under pressure', kind: 'Research note · Aug 2026', line: 'What happens when an agent gets 50 tools', meta: 'Aug 2026 · 1,200 runs', desc: 'Accuracy holds up to about a dozen tools, then falls off a cliff. Grouping tools by intent recovered most of it.', stats: [['Runs', '1,200'], ['Tools', '50'], ['Recovered', '84%']], link: 'notes / tool-choice' }
+  ]},
+  { name: 'Video', items: [
+    { t: 'I rebuilt my editor in a weekend', kind: 'Video · 18:42', line: 'Four thousand lines deleted, nothing broke', meta: '148k views · Feb 2026', desc: 'A tour of what all that code was doing, and why none of it mattered. Recorded over one very long weekend.', stats: [['Views', '148k'], ['Length', '18:42'], ['Published', 'Feb 2026']], link: 'youtube / rebuilt-editor' },
+    { t: 'Building an agent from scratch', kind: 'Video · 32:10', line: 'No framework, one file, live', meta: '92k views · Jun 2026', desc: 'From an empty file to an agent that plans, calls tools and remembers what it did, explained one decision at a time.', stats: [['Views', '92k'], ['Length', '32:10'], ['Published', 'Jun 2026']], link: 'youtube / agent-from-scratch' },
+    { t: 'What 40 runs taught me about memory', kind: 'Video · 14:05', line: 'The research note, on camera', meta: '61k views · Apr 2026', desc: 'The memory experiment walked through with the traces on screen, including the runs that went badly.', stats: [['Views', '61k'], ['Length', '14:05'], ['Published', 'Apr 2026']], link: 'youtube / memory-runs' }
+  ]}
+];
+
+const HUMOR = [
+  'Scott Moss builds software products and teaches developers. He works on apps, open source tools and research into AI agents, and publishes videos on how they are made.',
+  'Scott builds products, open source tools and the occasional research experiment, then explains all of it on video. Most of it ships.',
+  'Scott builds apps, writes open source, runs experiments on AI agents and makes videos about the whole process. He has strong opinions about focus timers.',
+  'Scott builds software for a living and for fun, which is the same job with worse hours. Apps, open source, agent research and videos. He ships more often than he sleeps.',
+  'Scott has rebuilt his editor four times, which is three more than recommended. He makes apps, open source and videos, and is teaching agents to remember the things he forgets.'
+];
+const HONEST = [
+  'Every project here was a runaway success. That is what the lower honesty setting is for.',
+  'The numbers here are real, and so are the failures. They are listed too.'
+];
+
+/* ---------- fallback ---------- */
+function fallback() {
+  const f = $('#fallback');
+  f.hidden = false;
+  f.innerHTML = '<h1>Scott Moss</h1>' + DATA.map(s => '<h2>' + s.name + '</h2>' + s.items.map(i => '<p><strong>' + i.t + '</strong> · ' + i.line + '</p>').join('')).join('') + '<h2>About</h2><p>' + HUMOR[3] + '</p><p style="margin-top:28px;font:12px var(--mono);color:#6e6961">This prototype needs WebGL. Showing the plain version.</p>';
+  $('#loader').classList.add('out');
+}
+
+/* ---------- noise ---------- */
+function hash(x, y, s) {
+  let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(s | 0, 1442695041);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function vnoise(x, y, s) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x, y, s, o) {
+  let f = 0, amp = .5, fr = 1;
+  for (let i = 0; i < o; i++) { f += amp * vnoise(x * fr, y * fr, s + i * 17); fr *= 2.03; amp *= .5; }
+  return f;
+}
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function blur(a, w, h, r) {
+  if (r < 1) return a;
+  const t = new Float32Array(a.length), n = 2 * r + 1;
+  for (let y = 0; y < h; y++) {
+    const row = y * w; let acc = 0;
+    for (let k = -r; k <= r; k++) acc += a[row + Math.min(w - 1, Math.max(0, k))];
+    for (let x = 0; x < w; x++) { t[row + x] = acc / n; acc += a[row + Math.min(w - 1, x + r + 1)] - a[row + Math.max(0, x - r)]; }
+  }
+  for (let x = 0; x < w; x++) {
+    let acc = 0;
+    for (let k = -r; k <= r; k++) acc += t[Math.min(h - 1, Math.max(0, k)) * w + x];
+    for (let y = 0; y < h; y++) { a[y * w + x] = acc / n; acc += t[Math.min(h - 1, y + r + 1) * w + x] - t[Math.max(0, y - r) * w + x]; }
+  }
+  return a;
+}
+const mkCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+const TW = 384, TH = 864, PW = 448, PH = 1008;
+function noiseField(w, h, seed) {
+  const f = new Float32Array(w * h), s = 5.2 / w;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const n = fbm(x * s, y * s, seed, 4), n2 = vnoise(x * s * 9, y * s * 9, seed + 5), g = hash(x, y, seed + 9);
+    f[y * w + x] = (n - .5) * .55 + (n2 - .5) * .1 + (g - .5) * .06;
+  }
+  return f;
+}
+function groove(hf, w, h, yc, depth) {
+  for (let y = Math.floor(yc - 3); y <= Math.ceil(yc + 3); y++) {
+    if (y < 0 || y >= h) continue;
+    const f = Math.max(0, 1 - Math.abs(y - yc) / 3);
+    for (let x = 0; x < w; x++) hf[y * w + x] -= depth * f * f;
+  }
+}
+function hole(hf, w, h, cx, cy, r, depth) {
+  const R = r * 1.4;
+  for (let y = Math.floor(cy - R); y <= Math.ceil(cy + R); y++) for (let x = Math.floor(cx - R); x <= Math.ceil(cx + R); x++) {
+    if (x < 0 || y < 0 || x >= w || y >= h) continue;
+    const d = Math.hypot(x - cx, y - cy);
+    if (d > R) continue;
+    const t = d < r ? .9 + .1 * (d / r) : 1 - smooth(r, R, d);
+    hf[y * w + x] -= depth * t;
+  }
+}
+function pinholes(hf, w, h, seed, count) {
+  const r = rng(seed);
+  for (let i = 0; i < count; i++) hole(hf, w, h, r() * w, r() * h, .5 + r() * 1.2, .12 + r() * .3);
+}
+function textMask(w, h, lines) {
+  const c = mkCanvas(w, h), x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.textBaseline = 'alphabetic';
+  lines(x, w, h);
+  const d = x.getImageData(0, 0, w, h).data, m = new Float32Array(w * h);
+  for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] / 255;
+  return blur(m, w, h, 1);
+}
+function setLS(x, v) { try { x.letterSpacing = v; } catch (e) {} }
+function labelLines(num, label) {
+  return (x, w, h) => {
+    const fs = Math.round(w * .062), by = Math.round(h * .945), lx = Math.round(w * .1);
+    x.font = '500 ' + Math.round(fs * .78) + 'px "JetBrains Mono", monospace';
+    setLS(x, '0px');
+    x.fillText(num, lx, by);
+    x.font = '700 ' + fs + 'px Archivo, sans-serif';
+    try { x.fontStretch = 'expanded'; } catch (e) {}
+    setLS(x, Math.round(fs * .2) + 'px');
+    x.fillText(label.toUpperCase(), lx + Math.round(fs * 1.9), by);
+    x.fillRect(lx, Math.round(h * .9), Math.round(w * .8), Math.max(2, Math.round(w * .005)));
+  };
+}
+function mapsFrom(hf, tone, w, h, strength, grooveMask, lift) {
+  const nC = mkCanvas(w, h), aC = mkCanvas(w, h), rC = mkCanvas(w, h);
+  const nX = nC.getContext('2d'), aX = aC.getContext('2d'), rX = rC.getContext('2d');
+  const nI = nX.createImageData(w, h), aI = aX.createImageData(w, h), rI = rX.createImageData(w, h);
+  const N = nI.data, A = aI.data, Rr = rI.data;
+  const at = (x, y) => hf[Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x))];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x, p = i * 4;
+    const gx = (at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x - 1, y) + at(x - 1, y + 1));
+    const gy = (at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1));
+    let nx = -gx * strength, ny = gy * strength, nz = 1;
+    const l = Math.hypot(nx, ny, nz); nx /= l; ny /= l; nz /= l;
+    N[p] = (nx * .5 + .5) * 255; N[p + 1] = (ny * .5 + .5) * 255; N[p + 2] = (nz * .5 + .5) * 255; N[p + 3] = 255;
+    const g = grooveMask ? grooveMask[i] : 0, lf = lift ? lift[i] : 0;
+    const t = Math.max(6, Math.min(90, 31 + tone[i] * 26 - g * 14 + lf * 12));
+    A[p] = t - 1; A[p + 1] = t; A[p + 2] = t + 1.5; A[p + 3] = 255;
+    const rough = Math.max(.25, Math.min(1, .62 - tone[i] * .22 + g * .28));
+    Rr[p] = Rr[p + 1] = Rr[p + 2] = rough * 255; Rr[p + 3] = 255;
+  }
+  nX.putImageData(nI, 0, 0); aX.putImageData(aI, 0, 0); rX.putImageData(rI, 0, 0);
+  return { nC, aC, rC };
+}
+
+/* ---------- start ---------- */
+const probe = document.createElement('canvas');
+const hasGL = !!(window.WebGLRenderingContext && (probe.getContext('webgl2') || probe.getContext('webgl')));
+if (!hasGL) fallback();
+else start().catch(err => { console.error(err); fallback(); });
+
+async function start() {
+  const grainC = mkCanvas(180, 180), gx = grainC.getContext('2d'), gi = gx.createImageData(180, 180);
+  for (let i = 0; i < gi.data.length; i += 4) { const v = Math.random() * 255; gi.data[i] = gi.data[i + 1] = gi.data[i + 2] = v; gi.data[i + 3] = 255; }
+  gx.putImageData(gi, 0, 0);
+  $('#grain').style.backgroundImage = 'url(' + grainC.toDataURL() + ')';
+
+  await Promise.race([
+    Promise.all([document.fonts.load('700 40px Archivo'), document.fonts.load('500 20px "JetBrains Mono"')]),
+    new Promise(r => setTimeout(r, 2500))
+  ]);
+
+  const renderer = new THREE.WebGLRenderer({ canvas: $('#gl'), antialias: true, powerPreference: 'high-performance' });
+  const DPR = Math.min(devicePixelRatio || 1, 1.75);
+  renderer.setPixelRatio(DPR);
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const aniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050505);
+  scene.fog = new THREE.Fog(0x050505, 7, 18);
+  const camera = new THREE.PerspectiveCamera(innerWidth / innerHeight < .8 || innerWidth < 640 ? 42 : 34, innerWidth / innerHeight, .1, 60);
+
+  const V3 = THREE.Vector3, Y = new V3(0, 1, 0), _v = new V3();
+  const W = .8, H = 1.8, T = .2, SEL_Z = .9, PORTRAIT_Z = .6;
+  let narrow = innerWidth / innerHeight < .8 || innerWidth < 640;
+  let GAP = narrow ? .16 : .38;
+  const homeX = i => (i - 1.5) * (W + GAP);
+
+  /* textures */
+  const tex = (c, srgb, repeat) => {
+    const t = new THREE.CanvasTexture(c);
+    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = aniso;
+    if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+    return t;
+  };
+  const fieldA = noiseField(TW, TH, 11), fieldB = noiseField(TW, TH, 23);
+  function faceHeight(base, flip, seed, ties) {
+    const hf = new Float32Array(TW * TH);
+    for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) hf[y * TW + x] = base[y * TW + (flip ? TW - 1 - x : x)];
+    if (ties) {
+      groove(hf, TW, TH, TH / 3, .3); groove(hf, TW, TH, 2 * TH / 3, .3);
+      for (const [cx, cy] of [[.2, 1 / 6], [.8, 1 / 6], [.2, .5], [.8, .5], [.2, 5 / 6], [.8, 5 / 6]]) hole(hf, TW, TH, cx * TW, cy * TH, TW * .021, .95);
+    }
+    pinholes(hf, TW, TH, seed, ties ? 70 : 30);
+    return hf;
+  }
+  const matFrom = (m, repeat) => new THREE.MeshStandardMaterial({
+    map: tex(m.aC, true, repeat), normalMap: tex(m.nC, false, repeat), roughnessMap: tex(m.rC, false, repeat),
+    roughness: 1, metalness: .04, normalScale: new THREE.Vector2(1.15, 1.15)
+  });
+  const plainH = faceHeight(fieldB, true, 5, false);
+  const plain = mapsFrom(plainH, plainH, TW, TH, 2.2);
+  const sideMat = matFrom(plain, [.25, 1]);
+  const topMat = matFrom(plain, [1, .11]);
+  const backH = faceHeight(fieldB, false, 7, true);
+  const backMat = matFrom(mapsFrom(backH, backH, TW, TH, 2.2));
+  const fronts = DATA.map((s, i) => {
+    const hf = faceHeight(i % 2 ? fieldB : fieldA, i > 1, 100 + i, true);
+    const mask = textMask(TW, TH, labelLines(pad(i + 1), s.name));
+    for (let k = 0; k < hf.length; k++) hf[k] -= mask[k] * .9;
+    return matFrom(mapsFrom(hf, hf, TW, TH, 2.2, mask));
+  });
+
+  /* portrait relief */
+  const fieldP = noiseField(PW, PH, 37);
+  const NICHE = { x: 52, y: 150, w: PW - 104, h: 650 };
+  const caption = textMask(PW, PH, (x, w, h) => {
+    const fs = Math.round(w * .06), cx = w / 2;
+    x.textAlign = 'center';
+    x.font = '700 ' + fs + 'px Archivo, sans-serif';
+    try { x.fontStretch = 'expanded'; } catch (e) {}
+    setLS(x, Math.round(fs * .3) + 'px');
+    x.fillText('SCOTT MOSS', cx + fs * .15, Math.round(h * .875));
+    x.font = '500 ' + Math.round(fs * .62) + 'px "JetBrains Mono", monospace';
+    setLS(x, Math.round(fs * .12) + 'px');
+    x.fillText('IN RELIEF', cx, Math.round(h * .915));
+    x.fillRect(Math.round(w * .1), Math.round(h * .945), Math.round(w * .8), 2);
+  });
+  function drawBust(ctx, R) {
+    const cx = R.x + R.w / 2;
+    ctx.save(); ctx.beginPath(); ctx.rect(R.x, R.y, R.w, R.h); ctx.clip();
+    let g = ctx.createRadialGradient(cx, R.y + R.h * .8, 8, cx, R.y + R.h * .98, R.w * .62);
+    g.addColorStop(0, '#cfcfcf'); g.addColorStop(.62, '#808080'); g.addColorStop(1, '#262626');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, R.y + R.h * 1.04, R.w * .5, R.h * .33, 0, Math.PI, 2 * Math.PI); ctx.fill();
+    g = ctx.createLinearGradient(cx - R.w * .1, 0, cx + R.w * .1, 0);
+    g.addColorStop(0, '#5a5a5a'); g.addColorStop(.5, '#bcbcbc'); g.addColorStop(1, '#5a5a5a');
+    ctx.fillStyle = g; ctx.fillRect(cx - R.w * .095, R.y + R.h * .48, R.w * .19, R.h * .3);
+    ctx.fillStyle = '#8c8c8c';
+    ctx.beginPath(); ctx.ellipse(cx - R.w * .2, R.y + R.h * .4, R.w * .032, R.h * .048, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + R.w * .2, R.y + R.h * .4, R.w * .032, R.h * .048, 0, 0, Math.PI * 2); ctx.fill();
+    g = ctx.createRadialGradient(cx - R.w * .05, R.y + R.h * .33, 4, cx, R.y + R.h * .38, R.w * .27);
+    g.addColorStop(0, '#f4f4f4'); g.addColorStop(.72, '#ababab'); g.addColorStop(1, '#6a6a6a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, R.y + R.h * .375, R.w * .205, R.h * .2, 0, 0, Math.PI * 2); ctx.fill();
+    g = ctx.createLinearGradient(0, R.y + R.h * .17, 0, R.y + R.h * .3);
+    g.addColorStop(0, 'rgba(255,255,255,.18)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, R.y + R.h * .28, R.w * .2, R.h * .1, 0, Math.PI, 2 * Math.PI); ctx.fill();
+    ctx.restore();
+  }
+  function portraitLum(img) {
+    const c = mkCanvas(PW, PH), ctx = c.getContext('2d'), R = NICHE;
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, PW, PH);
+    if (img) {
+      const s = Math.max(R.w / img.width, R.h / img.height), dw = img.width * s, dh = img.height * s;
+      ctx.save(); ctx.beginPath(); ctx.rect(R.x, R.y, R.w, R.h); ctx.clip();
+      ctx.drawImage(img, R.x + (R.w - dw) / 2, R.y + (R.h - dh) / 2, dw, dh);
+      ctx.restore();
+    } else drawBust(ctx, R);
+    const d = ctx.getImageData(0, 0, PW, PH).data, lum = new Float32Array(PW * PH);
+    for (let i = 0; i < lum.length; i++) lum[i] = (.2126 * d[i * 4] + .7152 * d[i * 4 + 1] + .0722 * d[i * 4 + 2]) / 255;
+    if (img) {
+      const vals = [];
+      for (let y = R.y; y < R.y + R.h; y += 3) for (let x = R.x; x < R.x + R.w; x += 3) vals.push(lum[y * PW + x]);
+      vals.sort((a, b) => a - b);
+      const lo = vals[Math.floor(vals.length * .03)], hi = vals[Math.floor(vals.length * .97)] || 1;
+      const cx = R.x + R.w / 2, cy = R.y + R.h * .5, rx = R.w * .5, ry = R.h * .52;
+      for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) {
+        const i = y * PW + x;
+        if (x < R.x || x >= R.x + R.w || y < R.y || y >= R.y + R.h) { lum[i] = 0; continue; }
+        const v = Math.pow(Math.max(0, Math.min(1, (lum[i] - lo) / Math.max(.05, hi - lo))), .9);
+        const e = Math.hypot((x - cx) / rx, (y - cy) / ry);
+        lum[i] = v * (1 - smooth(.72, 1, e)) * .85;
+      }
+      blur(lum, PW, PH, 2); blur(lum, PW, PH, 1);
+    } else {
+      blur(lum, PW, PH, 5); blur(lum, PW, PH, 4);
+    }
+    return lum;
+  }
+  function portraitMaps(img) {
+    const lum = portraitLum(img), R = NICHE;
+    const coarse = new Float32Array(PW * PH), hf = new Float32Array(PW * PH), tone = new Float32Array(PW * PH), disp = mkCanvas(PW, PH);
+    const dX = disp.getContext('2d'), dI = dX.createImageData(PW, PH), D = dI.data;
+    for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) {
+      const i = y * PW + x;
+      const edge = Math.min(x - R.x, R.x + R.w - x, y - R.y, R.y + R.h - y);
+      const nf = smooth(0, 9, edge);
+      coarse[i] = -.35 * nf + .95 * lum[i] * nf;
+      hf[i] = fieldP[i] * .9 + 3.2 * coarse[i] - caption[i] * .9;
+      tone[i] = fieldP[i] - .15 * nf;
+      const dv = Math.max(0, Math.min(1, (coarse[i] + .4) / 1.4)) * 255;
+      D[i * 4] = D[i * 4 + 1] = D[i * 4 + 2] = dv; D[i * 4 + 3] = 255;
+    }
+    pinholes(hf, PW, PH, 77, 50);
+    dX.putImageData(dI, 0, 0);
+    return { ...mapsFrom(hf, tone, PW, PH, 2.2, caption, lum), disp };
+  }
+  const DS = .06;
+  const portraitMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: .03, displacementScale: DS, normalScale: new THREE.Vector2(1.1, 1.1) });
+  function applyPortrait(img) {
+    const m = portraitMaps(img);
+    for (const k of ['map', 'normalMap', 'roughnessMap', 'displacementMap']) if (portraitMat[k]) portraitMat[k].dispose();
+    portraitMat.map = tex(m.aC, true);
+    portraitMat.normalMap = tex(m.nC, false);
+    portraitMat.roughnessMap = tex(m.rC, false);
+    portraitMat.displacementMap = tex(m.disp, false);
+    portraitMat.needsUpdate = true;
+  }
+  applyPortrait(null);
+
+  /* slabs */
+  const box = new THREE.BoxGeometry(W, H, T);
+  const slabs = DATA.map((s, i) => {
+    const g = new THREE.Group();
+    const m = new THREE.Mesh(box, [sideMat, sideMat, topMat, topMat, fronts[i], backMat]);
+    m.position.y = H / 2; m.castShadow = m.receiveShadow = true; m.userData.k = i;
+    g.add(m); g.position.set(homeX(i), 0, 0);
+    g.userData = { k: i, mesh: m, path: [], hover: 0 };
+    scene.add(g);
+    return g;
+  });
+  const portrait = new THREE.Group();
+  {
+    const m = new THREE.Mesh(box, [sideMat, sideMat, topMat, topMat, new THREE.MeshBasicMaterial({ visible: false }), backMat]);
+    m.position.y = H / 2; m.castShadow = m.receiveShadow = true;
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(W, H, 112, 252), portraitMat);
+    p.position.set(0, H / 2, T / 2 - .2857 * DS + .0006); p.receiveShadow = true;
+    portrait.add(m, p);
+    portrait.userData = { mesh: m, path: [] };
+    portrait.position.set(0, 0, -9);
+    scene.add(portrait);
+  }
+
+  /* floor */
+  let reflector = null;
+  try {
+    reflector = new Reflector(new THREE.PlaneGeometry(60, 60), { clipBias: .003, textureWidth: innerWidth * DPR * .5, textureHeight: innerHeight * DPR * .5, color: 0x8a8a8a });
+    reflector.rotation.x = -Math.PI / 2;
+    scene.add(reflector);
+  } catch (e) { reflector = null; }
+  const floorTexC = mkCanvas(256, 256), fX = floorTexC.getContext('2d'), fI = fX.createImageData(256, 256);
+  for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) { const v = 120 + (fbm(x / 32, y / 32, 3, 4) - .5) * 90 + (hash(x, y, 4) - .5) * 30; const p = (y * 256 + x) * 4; fI.data[p] = fI.data[p + 1] = fI.data[p + 2] = v; fI.data[p + 3] = 255; }
+  fX.putImageData(fI, 0, 0);
+  const floorRough = tex(floorTexC, false, [14, 14]);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x0b0b0b, roughness: .62, roughnessMap: floorRough, metalness: 0, transparent: true, opacity: reflector ? .9 : 1 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = .002; floor.receiveShadow = true;
+  scene.add(floor);
+
+  /* light */
+  const hemi = new THREE.HemisphereLight(0x9aa6b4, 0x050505, .14);
+  scene.add(hemi);
+  const rim = new THREE.DirectionalLight(0x8fa0b8, .35);
+  rim.position.set(-2, 4, -6); scene.add(rim);
+  const spot = new THREE.SpotLight(0xffc08a, 70, 0, Math.PI / 5, .75, 2);
+  spot.position.set(2.4, 1.6, 1.8);
+  spot.castShadow = true;
+  spot.shadow.mapSize.set(2048, 2048);
+  spot.shadow.camera.near = .4; spot.shadow.camera.far = 22;
+  spot.shadow.bias = -.0004; spot.shadow.normalBias = .02;
+  scene.add(spot, spot.target);
+
+  /* dust */
+  const dustN = 380, dPos = new Float32Array(dustN * 3), dSeed = new Float32Array(dustN);
+  for (let i = 0; i < dustN; i++) { dPos[i * 3] = (Math.random() - .5) * 7; dPos[i * 3 + 1] = Math.random() * 3; dPos[i * 3 + 2] = (Math.random() - .5) * 4 + .6; dSeed[i] = Math.random() * 100; }
+  const dGeo = new THREE.BufferGeometry(); dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+  const dotC = mkCanvas(32, 32), dotX = dotC.getContext('2d'), dg = dotX.createRadialGradient(16, 16, 0, 16, 16, 16);
+  dg.addColorStop(0, 'rgba(255,255,255,1)'); dg.addColorStop(1, 'rgba(255,255,255,0)'); dotX.fillStyle = dg; dotX.fillRect(0, 0, 32, 32);
+  const dust = new THREE.Points(dGeo, new THREE.PointsMaterial({ color: 0xffc896, size: .016, map: new THREE.CanvasTexture(dotC), transparent: true, opacity: .5, depthWrite: false, blending: THREE.AdditiveBlending }));
+  scene.add(dust);
+
+  /* tweens */
+  const tweens = new Set();
+  const heavy = p => p < .5 ? 8 * p ** 4 : 1 - Math.pow(-2 * p + 2, 4) / 2;
+  const tween = (dur, update, ease = heavy) => new Promise(res => {
+    if (reduce || dur <= 0) { update(1); res(); return; }
+    tweens.add({ t0: performance.now(), dur, update, ease, res });
+  });
+  const runTweens = now => { for (const tw of tweens) { const p = Math.min(1, (now - tw.t0) / tw.dur); tw.update(tw.ease(p)); if (p >= 1) { tweens.delete(tw); tw.res(); } } };
+  const wait = ms => reduce ? Promise.resolve() : new Promise(r => setTimeout(r, ms));
+  let shake = 0;
+  const thud = a => { if (!reduce) shake = Math.max(shake, a * .011); };
+
+  function swing(g, pivot, angle, dur = 560, record = true) {
+    if (record) g.userData.path.push({ type: 'swing', pivot: pivot.clone(), angle });
+    const p0 = g.position.clone(), r0 = g.rotation.y;
+    return tween(dur, e => { const a = angle * e; _v.copy(p0).sub(pivot).applyAxisAngle(Y, a); g.position.copy(pivot).add(_v); g.rotation.y = r0 + a; }).then(() => thud(.45));
+  }
+  function slide(g, toPos, toRot, dur = 820, record = true) {
+    if (record) g.userData.path.push({ type: 'slide', pos: g.position.clone(), rot: g.rotation.y });
+    const p0 = g.position.clone(), r0 = g.rotation.y;
+    return tween(dur, e => { g.position.lerpVectors(p0, toPos, e); g.rotation.y = r0 + (toRot - r0) * e; });
+  }
+  async function rewindOne(g) {
+    const s = g.userData.path.pop();
+    if (!s) return;
+    if (s.type === 'swing') await swing(g, s.pivot, -s.angle, 520, false);
+    else await slide(g, s.pos, s.rot, 760, false);
+  }
+  async function rewind(g, delay = 0) { await wait(delay); while (g.userData.path.length) await rewindOne(g); }
+  function outerBack(g, d) {
+    const cs = [[-W / 2, -T / 2], [W / 2, -T / 2], [-W / 2, T / 2], [W / 2, T / 2]].map(([x, z]) => new V3(x, 0, z).applyAxisAngle(Y, g.rotation.y).add(g.position));
+    cs.sort((a, b) => (Math.round(d * b.x * 1e4) - Math.round(d * a.x * 1e4)) || (a.z - b.z));
+    return cs[0];
+  }
+
+  /* state */
+  let mode = 'home', cur = -1, curItem = -1, busy = false, camState = 'home', hovered = -1;
+  const panel = $('#panel'), about = $('#about');
+  let panelBack = false;
+  const camPos = new V3(), camTgt = new V3(), want = { pos: new V3(), tgt: new V3() };
+
+  function camFor(st) {
+    const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2), th = tv * camera.aspect;
+    const fit = (cx, cy, cz, fh, fw, ox = 0, oy = 0) => { const dist = Math.max(H / (fh * 2 * tv), W / (fw * 2 * th)); return [new V3(cx + ox, cy + oy + .03, cz + dist), new V3(cx + ox, cy + oy, cz)]; };
+    if (st === 'home') {
+      if (narrow) return [new V3(-2.9, 1.45, 7.2), new V3(.25, .86, -.3)];
+      const span = 4 * W + 3 * GAP + .9;
+      const dist = Math.max(H / (.5 * 2 * tv), span / (.86 * 2 * th));
+      return [new V3(0, 1.1, dist), new V3(0, .88, 0)];
+    }
+    if (st === 'section') return fit(0, H / 2, SEL_Z + T / 2, .74, .84);
+    if (st === 'detail') return fit(0, H / 2, SEL_Z + T / 2, .86, .92);
+    if (st === 'about') {
+      if (narrow) { const dist = Math.max(H / (.34 * 2 * tv), W / (.62 * 2 * th)), oy = -.52 * dist * tv; return [new V3(0, H / 2 + oy + .03, PORTRAIT_Z + T / 2 + dist), new V3(0, H / 2 + oy, PORTRAIT_Z + T / 2)]; }
+      const dist = Math.max(H / (.74 * 2 * tv), W / (.3 * 2 * th));
+      const ox = dist * th * .44;
+      return [new V3(ox, H / 2 + .03, PORTRAIT_Z + T / 2 + dist), new V3(ox, H / 2, PORTRAIT_Z + T / 2)];
+    }
+  }
+  function setWant() { const [p, t] = camFor(camState); want.pos.copy(p); want.tgt.copy(t); }
+
+  function setCorner() {
+    const w = $('#where'), h = $('#hint');
+    if (mode === 'home') { w.innerHTML = '<b>00</b>Index'; h.textContent = coarse ? 'Tap a slab' : 'Move to light the stone · Click a slab'; }
+    if (mode === 'section') { w.innerHTML = '<b>' + pad(cur + 1) + '</b>' + DATA[cur].name; h.textContent = 'Select a project · Esc to step back'; }
+    if (mode === 'detail') { w.innerHTML = '<b>' + pad(cur + 1) + '</b>' + DATA[cur].name + ' / ' + DATA[cur].items[curItem].t; h.textContent = 'Esc to step back'; }
+    if (mode === 'about') { w.innerHTML = '<b>—</b>About'; h.textContent = 'Drop a photo to carve it'; }
+    $('#aboutBtn').textContent = mode === 'about' ? 'Close' : 'About';
+    document.body.classList.toggle('m-about', mode === 'about');
+  }
+  function hidePanel() { panel.classList.remove('show'); }
+  function showPanel(html, back) {
+    panel.innerHTML = '<div class="pin">' + html + '</div>';
+    panelBack = back;
+    placePanel();
+    requestAnimationFrame(() => panel.classList.add('show'));
+  }
+  function sectionHTML(k) {
+    const s = DATA[k];
+    return '<div class="p-head"><button class="back" type="button" data-act="home">← Index</button><span>' + pad(k + 1) + ' / 04</span></div>' +
+      '<h2 class="p-title">' + s.name + '</h2>' +
+      '<ol class="p-list">' + s.items.map((it, j) => '<li><button type="button" data-j="' + j + '"><span class="i-n">' + pad(j + 1) + '</span><span><span class="i-t">' + it.t + '</span><span class="i-l">' + it.line + '</span><span class="i-m">' + it.meta + '</span></span></button></li>').join('') + '</ol>';
+  }
+  function detailHTML(k, j) {
+    const s = DATA[k], it = s.items[j];
+    return '<div class="p-head"><button class="back" type="button" data-act="section">← ' + s.name + '</button><span>' + pad(j + 1) + ' / ' + pad(s.items.length) + '</span></div>' +
+      '<div class="d-kick">' + it.kind + '</div><h2 class="d-title' + (it.t.length > 16 ? ' long' : '') + '">' + it.t + '</h2>' +
+      '<p class="d-desc">' + it.desc + '</p>' +
+      '<dl class="d-stats">' + it.stats.map(([a, b]) => '<div><dt>' + a + '</dt><dd>' + b + '</dd></div>').join('') + '</dl>' +
+      '<div class="d-link">' + it.link + '</div>';
+  }
+  function placePanel() {
+    if (cur < 0) return;
+    const m = slabs[cur].userData.mesh;
+    m.updateWorldMatrix(true, false);
+    const z = panelBack ? -T / 2 - .001 : T / 2 + .001;
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+      _v.set(sx * W / 2, sy * H / 2, z).applyMatrix4(m.matrixWorld).project(camera);
+      const px = (_v.x * .5 + .5) * innerWidth, py = (-_v.y * .5 + .5) * innerHeight;
+      x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+    }
+    panel.style.transform = 'translate(' + x0.toFixed(1) + 'px,' + y0.toFixed(1) + 'px)';
+    panel.style.width = (x1 - x0).toFixed(1) + 'px';
+    panel.style.height = (y1 - y0).toFixed(1) + 'px';
+  }
+
+  async function openSection(k) {
+    if (busy || mode !== 'home') return;
+    busy = true; mode = 'section'; cur = k; hovered = -1; document.body.classList.remove('hover');
+    setCorner();
+    const jobs = [];
+    slabs.forEach((g, i) => {
+      if (i === k) return;
+      const d = Math.sign(i - k), dist = Math.abs(i - k);
+      jobs.push((async () => {
+        await wait(40 + dist * 110);
+        await swing(g, outerBack(g, d), -d * Math.PI / 2, 600);
+        await slide(g, g.position.clone().add(new V3(d * (.3 + dist * .28), 0, -1.25 - dist * .3)), g.rotation.y, 860);
+        thud(.25);
+      })());
+    });
+    jobs.push((async () => {
+      await wait(360);
+      camState = 'section'; setWant();
+      await slide(slabs[k], new V3(0, 0, SEL_Z), 0, 1000);
+      thud(.7);
+    })());
+    await Promise.all(jobs);
+    showPanel(sectionHTML(k), false);
+    busy = false;
+  }
+  async function openDetail(j) {
+    if (busy || mode !== 'section') return;
+    busy = true; hidePanel(); curItem = j; mode = 'detail'; setCorner();
+    const g = slabs[cur];
+    await wait(180);
+    camState = 'detail'; setWant();
+    await slide(g, g.position.clone(), g.rotation.y + Math.PI, 1150);
+    thud(.5);
+    showPanel(detailHTML(cur, j), true);
+    busy = false;
+  }
+  async function closeDetail() {
+    if (busy || mode !== 'detail') return;
+    busy = true; hidePanel(); mode = 'section'; setCorner();
+    camState = 'section'; setWant();
+    await rewindOne(slabs[cur]);
+    thud(.5);
+    showPanel(sectionHTML(cur), false);
+    busy = false;
+  }
+  async function toHome() {
+    if (busy || mode === 'home') return;
+    busy = true; hidePanel(); about.classList.remove('show');
+    const wasAbout = mode === 'about', k = cur;
+    mode = 'home'; setCorner();
+    camState = 'home'; setWant();
+    const jobs = [];
+    if (wasAbout) jobs.push(slide(portrait, new V3(0, 0, -9), 0, 1100, false));
+    slabs.forEach((g, i) => jobs.push(rewind(g, i === k ? 0 : (wasAbout ? 420 : 260 + Math.abs(i - k) * 90))));
+    await Promise.all(jobs);
+    thud(.4);
+    cur = -1; curItem = -1;
+    busy = false;
+  }
+  async function openAbout() {
+    if (busy) return;
+    if (mode !== 'home') { await toHome(); if (busy) return; }
+    busy = true; mode = 'about'; hovered = -1; setCorner();
+    const jobs = slabs.map((g, i) => (async () => {
+      const d = i < 2 ? -1 : 1, dist = i < 2 ? 2 - i : i - 1;
+      await wait(dist === 1 ? 40 : 160);
+      await swing(g, outerBack(g, d), -d * Math.PI / 2, 620);
+      await slide(g, g.position.clone().add(new V3(d * (.45 + dist * .3), 0, -.9 - dist * .25)), g.rotation.y, 820);
+    })());
+    jobs.push((async () => {
+      await wait(520);
+      camState = 'about'; setWant();
+      await slide(portrait, new V3(0, 0, PORTRAIT_Z), 0, 1500, false);
+      thud(.9);
+    })());
+    await Promise.all(jobs);
+    about.classList.add('show');
+    busy = false;
+  }
+
+  /* bio controls */
+  const hon = $('#honesty'), hum = $('#humor'), bio = $('#bio');
+  function renderBio(flash) {
+    const hu = +hum.value, ho = +hon.value;
+    $('#hu').value = $('#hu').textContent = String(hu).padStart(3, '0') + '%';
+    $('#ho').value = $('#ho').textContent = String(ho).padStart(3, '0') + '%';
+    const text = HUMOR[Math.min(4, Math.floor(hu / 20))] + ' ' + HONEST[ho >= 50 ? 1 : 0];
+    $('#tnote').textContent = hu === 100 ? 'Humor at 100% is not recommended.' : ho === 100 ? 'Absolute honesty is not always the most diplomatic.' : ho < 30 ? 'Low honesty mode. Results may be flattering.' : '';
+    if (bio.textContent === text) return;
+    if (flash && !reduce) { bio.classList.add('tick'); setTimeout(() => { bio.textContent = text; bio.classList.remove('tick'); }, 140); }
+    else bio.textContent = text;
+  }
+  hon.addEventListener('input', () => renderBio(true));
+  hum.addEventListener('input', () => renderBio(true));
+  renderBio(false);
+
+  /* photo */
+  function loadFile(f) {
+    if (!f || !/^image\//.test(f.type)) return;
+    const r = new FileReader();
+    r.onload = () => {
+      const img = new Image();
+      img.onload = () => { applyPortrait(img); if (mode !== 'about') openAbout(); };
+      img.src = r.result;
+    };
+    r.readAsDataURL(f);
+  }
+  $('#file').addEventListener('change', e => loadFile(e.target.files[0]));
+  const drop = $('#drop');
+  let dragDepth = 0;
+  addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; drop.classList.add('on'); });
+  addEventListener('dragover', e => e.preventDefault());
+  addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) drop.classList.remove('on'); });
+  addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; drop.classList.remove('on'); loadFile(e.dataTransfer.files[0]); });
+
+  /* input */
+  const pointer = new THREE.Vector2(0, 0), ndc = new THREE.Vector2();
+  let mx = .55, my = .25, lastMove = -1e9;
+  const ray = new THREE.Raycaster();
+  const hitSlab = (cx, cy) => {
+    ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const hit = ray.intersectObjects(slabs.map(g => g.userData.mesh), false)[0];
+    return hit ? hit.object.userData.k : -1;
+  };
+  addEventListener('pointermove', e => {
+    pointer.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    lastMove = performance.now();
+    if (e.pointerType === 'mouse' && mode === 'home' && !busy && e.target.id === 'gl') {
+      hovered = hitSlab(e.clientX, e.clientY);
+      document.body.classList.toggle('hover', hovered >= 0);
+    } else if (mode !== 'home') { hovered = -1; document.body.classList.remove('hover'); }
+  });
+  $('#gl').addEventListener('click', e => {
+    pointer.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    lastMove = performance.now();
+    if (mode !== 'home' || busy) return;
+    const k = hitSlab(e.clientX, e.clientY);
+    if (k >= 0) openSection(k);
+  });
+  panel.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.act === 'home') toHome();
+    else if (b.dataset.act === 'section') closeDetail();
+    else if (b.dataset.j != null) openDetail(+b.dataset.j);
+  });
+  $('#home').addEventListener('click', () => toHome());
+  $('#aboutBtn').addEventListener('click', () => mode === 'about' ? toHome() : openAbout());
+  document.querySelectorAll('.sr button').forEach(b => b.addEventListener('click', async () => {
+    if (b.dataset.k === 'about') return openAbout();
+    if (mode !== 'home') await toHome();
+    openSection(+b.dataset.k);
+  }));
+  addEventListener('keydown', e => {
+    if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== 'range') return;
+    if (e.key === 'Escape') { if (mode === 'detail') closeDetail(); else if (mode !== 'home') toHome(); }
+    if (mode === 'home' && /^[1-4]$/.test(e.key)) openSection(+e.key - 1);
+  });
+
+  /* resize */
+  function resize() {
+    const wasNarrow = narrow;
+    narrow = innerWidth / innerHeight < .8 || innerWidth < 640;
+    GAP = narrow ? .16 : .38;
+    camera.aspect = innerWidth / innerHeight;
+    camera.fov = narrow ? 42 : 34;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight, false);
+    if (reflector) reflector.getRenderTarget().setSize(innerWidth * DPR * .5, innerHeight * DPR * .5);
+    if (wasNarrow !== narrow && mode === 'home' && !busy) slabs.forEach((g, i) => { if (!g.userData.path.length) g.position.x = homeX(i); });
+    setWant();
+  }
+  addEventListener('resize', resize);
+
+  /* loop */
+  setWant();
+  camPos.copy(want.pos).add(new V3(0, .35, 2.2));
+  camTgt.copy(want.tgt);
+  setCorner();
+  let last = performance.now(), raf = 0;
+  const lp = new V3(), tmp = new V3();
+  function frame(t) {
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(.05, (t - last) / 1000); last = t;
+    runTweens(t);
+    const idle = coarse || t - lastMove > 5000;
+    if (idle && !reduce) { mx += (Math.sin(t * .00023) * .85 - mx) * .02; my += (.25 + Math.sin(t * .00017) * .45 - my) * .02; }
+    else if (!idle) { mx += (pointer.x - mx) * Math.min(1, dt * 5); my += (pointer.y - my) * Math.min(1, dt * 5); }
+    const k = reduce ? 1 : 1 - Math.exp(-dt * 2.6);
+    tmp.copy(want.pos);
+    if (camState === 'home' && !narrow) tmp.x += mx * .18, tmp.y += my * .06;
+    camPos.lerp(tmp, k); camTgt.lerp(want.tgt, k);
+    shake *= Math.exp(-dt * 16);
+    camera.position.copy(camPos); camera.position.y += Math.sin(t * .09) * shake;
+    camera.lookAt(camTgt);
+    const onFace = mode === 'section' || mode === 'detail';
+    if (onFace) lp.set(camTgt.x + (mx >= 0 ? 1 : -1) * 1.5 + mx * .9, .6 + (my * .5 + .5) * 1.6, camTgt.z + .75);
+    else lp.set(camTgt.x + mx * 2.7, .55 + (my * .5 + .5) * 1.9, camTgt.z + 1.7);
+    spot.position.lerp(lp, Math.min(1, dt * 4));
+    spot.intensity += ((onFace ? 30 : 70) - spot.intensity) * Math.min(1, dt * 3);
+    spot.target.position.lerp(camTgt, Math.min(1, dt * 4));
+    slabs.forEach((g, i) => { const m = g.userData.mesh, want_ = mode === 'home' && hovered === i ? .07 : 0; m.position.z += (want_ - m.position.z) * Math.min(1, dt * 8); });
+    const pa = dGeo.attributes.position.array;
+    for (let i = 0; i < dustN; i++) {
+      pa[i * 3 + 1] -= dt * (.018 + (dSeed[i] % 1) * .02);
+      pa[i * 3] += Math.sin(t * .0004 + dSeed[i]) * dt * .02;
+      if (pa[i * 3 + 1] < 0) pa[i * 3 + 1] = 3;
+    }
+    dGeo.attributes.position.needsUpdate = true;
+    if (panel.classList.contains('show')) placePanel();
+    renderer.render(scene, camera);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+    else if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); }
+  });
+  raf = requestAnimationFrame(frame);
+  requestAnimationFrame(() => $('#loader').classList.add('out'));
+  window.__monolith = { openSection, openDetail, openAbout, toHome, state: () => ({ mode, cur, busy }) };
+}
+</script>
+</body>
+</html>

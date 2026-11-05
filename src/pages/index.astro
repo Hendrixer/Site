@@ -1,0 +1,648 @@
+---
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+import { compact, getStars, monthYear } from '../lib/format';
+
+const research = (await getCollection('research', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const apps = (await getCollection('apps')).sort((a, b) => b.data.year - a.data.year);
+const oss = await Promise.all(
+  (await getCollection('oss')).map(async (entry) => ({
+    ...entry,
+    stars: await getStars(entry.data.repo, entry.data.stars),
+  })),
+);
+oss.sort((a, b) => b.stars - a.stars);
+const videos = (await getCollection('videos')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+
+const hasPortrait = existsSync(join(process.cwd(), 'public', site.portrait));
+const mailto = `mailto:${site.workEmail}?subject=${encodeURIComponent('Working together')}`;
+---
+
+<Base>
+  <main>
+    <header class="me in" style="--i:0">
+      <div class="avatar">
+        {hasPortrait ? <img src={site.portrait} alt={site.name} width="46" height="46" /> : <span aria-hidden="true">{site.initials}</span>}
+      </div>
+      <div>
+        <h1>{site.name}</h1>
+        <p>{site.tagline}</p>
+      </div>
+    </header>
+
+    <p class="intro in" style="--i:1" set:html={site.intro} />
+    {site.now && <div class="now in" style="--i:2"><span class="pulse" aria-hidden="true"></span><b>Now</b>{site.now}</div>}
+
+    {research.length > 0 && (
+      <section id="research" class="in" style="--i:3">
+        <h2>AI Research</h2>
+        <ol class="rows dated">
+          {research.map((post) => (
+            <li>
+              <a class="row" href={post.data.url ?? `/research/${post.id}/`} {...(post.data.url ? { target: '_blank', rel: 'noopener' } : {})}>
+                <span class="t">{post.data.title}</span>
+                <span class="arr" aria-hidden="true">{post.data.url ? '↗' : '→'}</span>
+                <span class="m">{monthYear(post.data.date)}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    <section id="work" class="in" style="--i:4">
+      <h2>Work with me</h2>
+      <p class="lead">{site.work.lead}</p>
+      <ol class="offers">
+        {site.work.offers.map((offer, i) => (
+          <li class="offer">
+            <span class="n">{String(i + 1).padStart(2, '0')}</span>
+            <div>
+              <div class="ot">{offer.title}<span class="tag">{offer.tag}</span></div>
+              <p>{offer.description}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div class="cta">
+        <a class="mail" href={mailto}>{site.work.cta}<span aria-hidden="true">→</span></a>
+        <button class="copy addr" type="button" data-email={site.workEmail}>{site.workEmail}<span>copy</span></button>
+      </div>
+    </section>
+
+    {apps.length > 0 && (
+    <section id="apps" class="in" style="--i:5">
+      <h2>Apps</h2>
+      <div class="cards">
+        {apps.map(({ data }) => (
+          <a class="card" href={data.url} style={`--tint:${data.tint}`}>
+            <div class="tile">
+              <span class="icon"><img src={data.icon} alt="" width="68" height="68" loading="lazy" /></span>
+              <em>{data.platform}</em>
+            </div>
+            <div class="ct">{data.name}</div>
+            <div class="cm">{data.description} · {data.year}</div>
+          </a>
+        ))}
+      </div>
+    </section>
+    )}
+
+    {oss.length > 0 && (
+    <section id="oss" class="in" style="--i:6">
+      <h2>Open source {site.links.github && <a href={site.links.github}>GitHub ↗</a>}</h2>
+      <ol class="rows">
+        {oss.map((item) => (
+          <li>
+            <a class="row" href={item.data.url} data-pv={item.data.snippet ? item.id : undefined}>
+              <span class="t">{item.data.name}</span>
+              <span class="d">{item.data.description}</span>
+              <span class="m">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 .8l2.2 4.6 5 .7-3.6 3.5.9 5L8 12.2 3.5 14.6l.9-5L.8 6.1l5-.7z" /></svg>
+                {compact(item.stars)}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+    )}
+
+    {videos.length > 0 && (
+    <section id="videos" class="in" style="--i:7">
+      <h2>Videos {site.links.youtube && <a href={site.links.youtube}>YouTube ↗</a>}</h2>
+      <div class="cards">
+        {videos.map(({ data }) => (
+          <a class="card" href={data.url}>
+            <div class="thumb">
+              {data.youtubeId ? (
+                <img src={`https://i.ytimg.com/vi/${data.youtubeId}/hqdefault.jpg`} alt="" loading="lazy" />
+              ) : (
+                <div class="th" style={`background:${data.thumb?.bg ?? '#18181a'};color:${data.thumb?.fg ?? '#fff'}`}>
+                  <b>{data.thumb?.text ?? data.title}</b>
+                </div>
+              )}
+              <em>{data.duration}</em>
+            </div>
+            <div class="ct">{data.title}</div>
+            <div class="cm">{data.views} views · {monthYear(data.date)}</div>
+          </a>
+        ))}
+      </div>
+    </section>
+    )}
+
+    <footer class="in" style="--i:8">
+      <div class="links">
+        {site.links.youtube && <a href={site.links.youtube}>YouTube</a>}
+        {site.links.github && <a href={site.links.github}>GitHub</a>}
+        {site.links.x && <a href={site.links.x}>X</a>}
+        <button class="copy" type="button" data-email={site.email}>Email <span>copy</span></button>
+      </div>
+      {site.placeholderNote && <p class="fine">{site.placeholderNote}</p>}
+    </footer>
+  </main>
+
+  <div class="pv" id="pv" aria-hidden="true"><div class="pv-in" id="pv-in"></div></div>
+  {oss.filter((item) => item.data.snippet).map((item) => (
+    <template id={`pv-${item.id}`}><pre class="code">{item.data.snippet}</pre></template>
+  ))}
+</Base>
+
+<script>
+  const pv = document.getElementById('pv');
+  const pvIn = document.getElementById('pv-in');
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (pv && pvIn && fine) {
+    let tx = 0, ty = 0, x = 0, y = 0, vx = 0, on = false, raf = 0, key = '';
+
+    const loop = () => {
+      const nx = x + (tx - x) * (reduce ? 1 : 0.18);
+      const ny = y + (ty - y) * (reduce ? 1 : 0.18);
+      vx = vx * 0.8 + (nx - x) * 0.2;
+      x = nx;
+      y = ny;
+      const rot = reduce ? 0 : Math.max(-6, Math.min(6, vx * 0.45));
+      pv.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) rotate(${rot.toFixed(2)}deg)`;
+      raf = on || Math.abs(tx - x) > 0.5 ? requestAnimationFrame(loop) : 0;
+    };
+    const place = (e: PointerEvent) => {
+      tx = Math.min(innerWidth - 316, e.clientX + 28);
+      ty = Math.max(16, Math.min(innerHeight - 212, e.clientY - 98));
+    };
+
+    document.querySelectorAll<HTMLElement>('[data-pv]').forEach((row) => {
+      row.addEventListener('pointerenter', (e) => {
+        const k = row.dataset.pv ?? '';
+        const tpl = document.getElementById(`pv-${k}`) as HTMLTemplateElement | null;
+        if (!tpl) return;
+        if (k !== key) {
+          pvIn.replaceChildren(tpl.content.cloneNode(true));
+          key = k;
+        }
+        place(e);
+        if (!on) {
+          x = tx;
+          y = ty + 10;
+        }
+        on = true;
+        pv.classList.add('on');
+        if (!raf) raf = requestAnimationFrame(loop);
+      });
+      row.addEventListener('pointermove', place);
+      row.addEventListener('pointerleave', () => {
+        on = false;
+        pv.classList.remove('on');
+      });
+    });
+  }
+</script>
+
+<style>
+  .me {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .avatar {
+    position: relative;
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--hover);
+    display: grid;
+    place-items: center;
+    font: 500 12.5px/1 var(--mono);
+    color: var(--muted);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  h1 {
+    font-size: 15px;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.35;
+  }
+  .me p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+  .intro {
+    margin: 0 0 20px;
+    font-size: 16px;
+    line-height: 1.7;
+    text-wrap: pretty;
+  }
+  .now {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    color: var(--muted);
+    padding: 6px 12px 6px 10px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .now b {
+    font-weight: 500;
+    color: var(--text);
+  }
+  .pulse {
+    position: relative;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  .pulse::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1.5px solid var(--green);
+    opacity: 0;
+    animation: ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes ping {
+    0% { transform: scale(0.4); opacity: 0.7; }
+    80%, 100% { transform: scale(1.3); opacity: 0; }
+  }
+
+  .rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: 12px;
+    padding: 9px 10px;
+    margin: 0 -10px;
+    border-radius: 8px;
+    transition: background-color 0.18s;
+  }
+  .row .t {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .row .d {
+    color: var(--muted);
+  }
+  .row .m {
+    font: 12.5px/1 var(--mono);
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    transition: color 0.18s;
+  }
+  .row .m svg {
+    width: 11px;
+    height: 11px;
+    vertical-align: -1px;
+    margin-right: 4px;
+  }
+  .row:hover {
+    background: var(--hover);
+  }
+  .row:hover .m {
+    color: var(--muted);
+  }
+  .dated .row {
+    grid-template-columns: 76px minmax(0, 1fr) auto;
+  }
+  .dated .t {
+    white-space: normal;
+  }
+  .dated .m {
+    order: -1;
+  }
+  .dated .arr {
+    color: var(--faint);
+    opacity: 0;
+    transform: translateX(-3px);
+    transition: opacity 0.2s, transform 0.3s var(--ease);
+  }
+  .dated .row:hover .arr {
+    opacity: 1;
+    transform: none;
+  }
+
+  .lead {
+    margin: 0 0 18px;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+  .offers {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .offer {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .offer .n {
+    font: 12.5px/1.75 var(--mono);
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .ot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    font-weight: 500;
+  }
+  .tag {
+    font: 500 11px/1 var(--mono);
+    color: var(--muted);
+    padding: 4px 7px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .offer p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-top: 20px;
+  }
+  .mail {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 500;
+    font-size: 14px;
+    transition: opacity 0.2s, transform 0.4s var(--ease);
+  }
+  .mail span {
+    transition: transform 0.4s var(--ease);
+  }
+  .mail:hover span {
+    transform: translateX(3px);
+  }
+  .mail:active {
+    transform: scale(0.97);
+  }
+  .addr {
+    display: inline-flex;
+    gap: 6px;
+    align-items: baseline;
+    font: 13px var(--mono);
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .addr:hover {
+    color: var(--text);
+  }
+  .addr span {
+    color: var(--faint);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px 16px;
+    margin-top: 6px;
+  }
+  .card {
+    display: block;
+  }
+  .tile,
+  .thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.45s var(--ease);
+  }
+  .card:hover .tile,
+  .card:hover .thumb {
+    transform: scale(0.982);
+  }
+  .tile {
+    display: grid;
+    place-items: center;
+    background: color-mix(in oklab, var(--tint) 12%, var(--bg));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tint) 12%, var(--line));
+  }
+  .icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 22.5%;
+    overflow: hidden;
+    box-shadow: 0 12px 24px -12px color-mix(in oklab, var(--tint) 80%, #000), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    transition: transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
+  }
+  .icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .card:hover .icon {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 20px 32px -14px color-mix(in oklab, var(--tint) 80%, #000), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  }
+  .tile em {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    font: 500 10.5px/1 var(--mono);
+    font-style: normal;
+    color: var(--muted);
+    background: color-mix(in oklab, var(--bg) 70%, transparent);
+    padding: 4px 6px;
+    border-radius: 4px;
+  }
+  .thumb {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+    background: var(--hover);
+  }
+  .thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .thumb em {
+    position: absolute;
+    right: 7px;
+    bottom: 7px;
+    font: 500 10.5px/1 var(--mono);
+    font-style: normal;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.72);
+    padding: 3px 5px;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .th {
+    position: absolute;
+    inset: 0;
+    padding: 8%;
+    display: flex;
+    align-items: flex-end;
+  }
+  .th b {
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 0.98;
+    font-size: clamp(20px, 4.2vw, 28px);
+    max-width: 11ch;
+    text-wrap: balance;
+  }
+  .ct {
+    margin-top: 10px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .cm {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  footer {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px 24px;
+    font-size: 14px;
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+  }
+  .links a,
+  .links .copy {
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .links a:hover,
+  .links .copy:hover {
+    color: var(--text);
+  }
+  .links .copy {
+    display: inline-flex;
+    gap: 6px;
+    align-items: baseline;
+  }
+  .links .copy span {
+    font: 12px var(--mono);
+    color: var(--faint);
+  }
+  .fine {
+    color: var(--faint);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .pv {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 30;
+    width: 300px;
+    height: 196px;
+    border-radius: 12px;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate3d(-999px, -999px, 0);
+    background: #101211;
+    box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.07);
+    transition: opacity 0.2s;
+  }
+  .pv.on {
+    opacity: 1;
+  }
+  .pv-in {
+    position: absolute;
+    inset: 0;
+    padding: 22px;
+  }
+  .pv :global(.code) {
+    margin: 0;
+    font: 500 11px/1.75 var(--mono);
+    color: #c8ccc9;
+    white-space: pre;
+  }
+
+  @media (max-width: 560px) {
+    .row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: 2px;
+    }
+    .row .d {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    .dated .row {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .dated .m {
+      order: 0;
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    .dated .arr {
+      display: none;
+    }
+    #videos .cards {
+      grid-template-columns: 1fr;
+    }
+    #apps .cards {
+      gap: 18px 12px;
+    }
+    .icon {
+      width: 54px;
+      height: 54px;
+    }
+    #apps .cm {
+      font-size: 12.5px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse::after {
+      animation: none;
+    }
+  }
+</style>

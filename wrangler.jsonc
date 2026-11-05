@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mossscott",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": true
+  },
+  "routes": [
+    { "pattern": "mossscott.com", "custom_domain": true },
+    { "pattern": "www.mossscott.com", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "INBOX",
+      "database_name": "mossscott-inbox",
+      "database_id": "dceb3073-213c-44bb-8a55-17b0ec0b6b0f",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true }
+}

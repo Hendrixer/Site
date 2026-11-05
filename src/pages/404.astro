@@ -1,0 +1,25 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Not found">
+  <main>
+    <p class="code in">404</p>
+    <h1 class="in" style="--i:1">This page doesn’t exist.</h1>
+    <p class="in" style="--i:2"><a class="ul" href="/">Go to the homepage</a></p>
+  </main>
+</Base>
+
+<style>
+  .code {
+    margin: 0;
+    font: 12.5px var(--mono);
+    color: var(--faint);
+  }
+  h1 {
+    margin: 10px 0 16px;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+</style>

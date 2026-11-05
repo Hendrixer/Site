@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scott Moss · Bento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: a 12-column bento grid. Every card shows the actual thing (the app, the code, the video), not a description of it. */
+  --bg:#EDECE8;
+  --card:#FFFFFF;
+  --text:#121212;
+  --muted:#6B6A65;
+  --faint:#A09F99;
+  --line:rgba(18,18,18,.07);
+  --line-2:rgba(18,18,18,.14);
+  --green:#2E8A5F;
+  --sans:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --ease:cubic-bezier(.2,.75,.2,1);
+  --coral:#F7E3D8;--coral-ink:#3A1A10;
+  --blue:#E2E7FA;
+  --lav:#ECE8FB;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0A0A0B;--card:#141416;--text:#EDEDEA;--muted:#97968F;--faint:#5F5E59;--line:rgba(255,255,255,.07);--line-2:rgba(255,255,255,.14);--green:#4CC38A;--coral:#2B1913;--coral-ink:#F6E3D9;--blue:#161B30;--lav:#1C1830;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0A0A0B;--card:#141416;--text:#EDEDEA;--muted:#97968F;--faint:#5F5E59;--line:rgba(255,255,255,.07);--line-2:rgba(255,255,255,.14);--green:#4CC38A;--coral:#2B1913;--coral-ink:#F6E3D9;--blue:#161B30;--lav:#1C1830;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:400 15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit}
+::selection{background:var(--text);color:var(--bg)}
+:focus-visible{outline:2px solid var(--text);outline-offset:3px;border-radius:10px}
+
+.wrap{max-width:1200px;margin:0 auto;padding:20px clamp(12px,2.4vw,24px) 120px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 4px 20px}
+.id{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em}
+.dot{width:28px;height:28px;border-radius:50%;background:var(--text);color:var(--bg);display:grid;place-items:center;font:600 11px/1 var(--mono);overflow:hidden;position:relative}
+.dot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.nav{display:flex;gap:4px}
+.pill{padding:8px 14px;border-radius:999px;font-size:14px;font-weight:500;background:var(--card);box-shadow:0 0 0 1px var(--line);transition:box-shadow .2s}
+.pill:hover{box-shadow:0 0 0 1px var(--line-2)}
+
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:62px;gap:12px;grid-auto-flow:dense}
+.c{position:relative;overflow:hidden;background:var(--card);border-radius:26px;box-shadow:0 0 0 1px var(--line);transition:transform .6s var(--ease),box-shadow .3s;animation:rise .9s var(--ease) both;animation-delay:calc(var(--i,0) * 60ms)}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}}
+a.c:hover,.c.hov:hover{transform:translateY(-3px);box-shadow:0 0 0 1px var(--line-2),0 24px 48px -28px rgba(0,0,0,.28)}
+.pad{padding:26px}
+.lab{display:flex;align-items:center;gap:8px;font:500 12px/1 var(--mono);color:var(--muted);letter-spacing:.01em}
+.lab .tag{padding:5px 8px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line-2)}
+.title{font-size:28px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin:14px 0 8px}
+.desc{color:var(--muted);margin:0;max-width:34ch}
+.meta{font:500 12.5px/1 var(--mono);color:var(--muted);margin-top:16px;font-variant-numeric:tabular-nums}
+.go{position:absolute;right:18px;top:18px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--card);box-shadow:0 0 0 1px var(--line-2);transition:transform .5s var(--ease)}
+.go svg{width:14px;height:14px}
+a.c:hover .go{transform:rotate(45deg)}
+
+.intro{display:flex;flex-direction:column;justify-content:space-between}
+.intro h1{font-size:clamp(30px,3.4vw,46px);line-height:1.04;letter-spacing:-.035em;font-weight:500;margin:0;max-width:20ch;text-wrap:balance}
+.intro h1 span{color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{appearance:none;border:0;background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:999px;font-weight:500;font-size:14px;box-shadow:inset 0 0 0 1px var(--line-2);transition:background-color .2s,transform .4s var(--ease)}
+.btn:hover{background:var(--bg)}
+.btn:active{transform:scale(.97)}
+.btn.solid{background:var(--text);color:var(--bg);box-shadow:none}
+.btn.solid:hover{background:var(--text);opacity:.88}
+.btn svg{width:15px;height:15px}
+
+.portrait{background:#D8D4CB;display:grid;place-items:center}
+.portrait .mono{font:600 92px/1 var(--sans);letter-spacing:-.06em;color:rgba(0,0,0,.14)}
+.portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.portrait .cap{position:absolute;left:18px;bottom:16px;font:500 12px/1 var(--mono);color:rgba(0,0,0,.5);background:rgba(255,255,255,.55);padding:6px 9px;border-radius:999px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+
+.now .row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;margin-top:16px;font-size:14px}
+.now .row b{font-weight:500}
+.now .row span{color:var(--muted);font:500 12px/1 var(--mono)}
+.bar{grid-column:1 / -1;height:4px;border-radius:2px;background:var(--line-2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--text);border-radius:2px;transform-origin:left;animation:grow 1.4s .5s var(--ease) both}
+@keyframes grow{from{transform:scaleX(0)}}
+.pulse{position:relative;width:8px;height:8px;border-radius:50%;background:var(--green)}
+.pulse::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1.5px solid var(--green);opacity:0;animation:ping 2.4s cubic-bezier(0,0,.2,1) infinite}
+@keyframes ping{0%{transform:scale(.4);opacity:.7}80%,100%{transform:scale(1.3);opacity:0}}
+
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end}
+.stat{padding:22px 24px}
+.stat+.stat{box-shadow:inset 1px 0 0 var(--line)}
+.stat b{display:block;font-size:clamp(28px,3vw,40px);font-weight:600;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{display:block;color:var(--muted);font-size:13.5px;margin-top:8px}
+.stats .lab{position:absolute;left:24px;top:22px}
+
+.lull{background:var(--coral);color:var(--coral-ink)}
+.lull .desc,.lull .meta,.lull .lab{color:color-mix(in oklab,var(--coral-ink) 62%,transparent)}
+.lull .lab .tag{box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--coral-ink) 18%,transparent)}
+.lull .txt{position:relative;z-index:1;max-width:46%}
+.phone{position:absolute;right:9%;top:42px;width:230px;height:470px;border-radius:44px;background:#1C1C1E;padding:9px;box-shadow:0 40px 60px -30px rgba(80,30,10,.45);transition:transform .8s var(--ease)}
+.lull:hover .phone{transform:translateY(-10px) rotate(-1.5deg)}
+.scr{height:100%;border-radius:36px;background:#FFF6F1;display:flex;flex-direction:column;align-items:center;padding:16px 18px;color:#2B1710}
+.isl{width:76px;height:22px;border-radius:12px;background:#1C1C1E}
+.scr .h{margin-top:28px;font-weight:600;font-size:18px;letter-spacing:-.02em}
+.scr .s{font-size:12px;color:#9A7464}
+.ring{position:relative;width:150px;height:150px;margin:22px 0 18px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .fg{transition:stroke-dashoffset 1.6s var(--ease)}
+.lull:hover .ring .fg{stroke-dashoffset:8}
+.ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:32px;font-weight:600;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.chip{font-size:11.5px;padding:7px 11px;border-radius:999px;background:#FDE1D3;color:#8A3215}
+
+.margin{background:var(--blue)}
+.margin .txt{position:relative;z-index:1}
+.win{position:absolute;left:26px;right:-40px;top:180px;bottom:-40px;border-radius:14px;background:#fff;box-shadow:0 30px 50px -30px rgba(30,40,110,.4),0 0 0 1px rgba(30,40,110,.08);overflow:hidden;transition:transform .8s var(--ease)}
+.margin:hover .win{transform:translate(-8px,-8px)}
+.wbar{height:34px;background:#F5F6F9;border-bottom:1px solid #E8E9EF;display:flex;align-items:center;gap:6px;padding:0 12px}
+.wbar i{width:9px;height:9px;border-radius:50%;background:#D8DAE1}
+.wbar span{margin-left:14px;font:500 11px/1 var(--mono);color:#8A8E9A}
+.wbody{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:16px;padding:20px 22px;color:#20232C;font-size:13.5px;line-height:1.6}
+.wbody h4{margin:0 0 8px;font-size:19px;letter-spacing:-.02em}
+.wbody p{margin:0 0 8px}
+.wbody mark{background:#D9E0FF;color:inherit;border-radius:3px;padding:0 2px;transition:background-color .4s}
+.margin:hover .wbody mark{background:#BFCBFF}
+.mnote{background:#fff;border-radius:10px;padding:9px 10px;font-size:11.5px;line-height:1.4;box-shadow:0 8px 20px -10px rgba(30,40,110,.35),0 0 0 1px #E8E9EF;margin-bottom:8px}
+.mnote b{display:block;font:500 10px/1.5 var(--mono);color:#3B5BFF}
+
+.kit{background:#0F1110;color:#E6E9E7}
+.kit .lab{color:#8B918D}
+.kit .lab .tag{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.kit .desc{color:#8B918D}
+.kit .go{background:#0F1110;box-shadow:0 0 0 1px rgba(255,255,255,.16)}
+.term{position:absolute;left:26px;right:26px;bottom:26px;font:500 13px/1.8 var(--mono);color:#C8CCC9;white-space:pre}
+.term .k{color:#8FB4FF}.term .s{color:#A8E6B8}.term .c{color:#5B625E}
+.cur{display:inline-block;width:8px;height:15px;background:#C8CCC9;vertical-align:-3px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.install{display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:9px 12px;border-radius:10px;background:#1A1D1B;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);font:500 12.5px/1 var(--mono);color:#C8CCC9;cursor:pointer;border:0}
+.install span{color:#5B625E}
+.stars{font:500 12.5px/1 var(--mono);color:#8B918D;margin-left:12px}
+
+.vids{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
+.vid .thumb{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;transition:transform .5s var(--ease)}
+.vid:hover .thumb{transform:scale(.97)}
+.vid .thumb em{position:absolute;right:7px;bottom:7px;font:500 10.5px/1 var(--mono);font-style:normal;color:#fff;background:rgba(0,0,0,.72);padding:3px 5px;border-radius:4px}
+.vt{margin-top:10px;font-weight:500;font-size:14px;line-height:1.35}
+.vm{font-size:12.5px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.th{position:absolute;inset:0;padding:9%;display:flex;flex-direction:column;justify-content:flex-end}
+.th b{font-weight:700;letter-spacing:-.04em;line-height:.95;font-size:clamp(16px,1.9vw,24px)}
+.th1{background:#18181A;color:#fff}
+.th1 mark{background:#F5C518;color:#18181A;padding:0 .12em;border-radius:3px}
+.th2{background:#E7E2D8;color:#18181A}
+.th2 pre{position:absolute;right:8%;top:12%;margin:0;padding:7px 9px;border-radius:6px;background:#18181A;color:#C9F2D6;font:500 9px/1.5 var(--mono)}
+.th3{background:#2B44E8;color:#fff}
+.th3 .b{position:absolute;right:9%;top:14%;display:flex;align-items:flex-end;gap:4px;height:40%}
+.th3 .b i{width:10px;background:rgba(255,255,255,.35);border-radius:2px}
+.th3 .b i:last-child{background:#fff}
+
+.research{background:var(--lav)}
+.chart{position:absolute;left:26px;right:26px;bottom:26px}
+.cbar{display:grid;grid-template-columns:86px minmax(0,1fr) 38px;align-items:center;gap:10px;font:500 12px/1 var(--mono);color:var(--muted);margin-top:10px;font-variant-numeric:tabular-nums}
+.cbar .tr{height:22px;border-radius:6px;background:color-mix(in oklab,var(--text) 6%,transparent);overflow:hidden}
+.cbar .tr i{display:block;height:100%;border-radius:6px;background:#B9AEF5;transform-origin:left;animation:grow 1.2s .6s var(--ease) both}
+.cbar.best{color:var(--text)}
+.cbar.best .tr i{background:#5B3FE0}
+.chart small{display:block;margin-top:12px;color:var(--muted);font-size:12.5px}
+
+.mini .title{font-size:20px;margin:12px 0 4px}
+.mini .meta{position:absolute;right:22px;top:24px;margin:0}
+
+.contact{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.contact h2{margin:0;font-size:clamp(26px,3vw,40px);font-weight:500;letter-spacing:-.035em;line-height:1.05}
+.contact h2 span{color:var(--muted)}
+
+.foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:20px 6px 0;font:500 12px/1.5 var(--mono);color:var(--faint)}
+
+.switch{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:40;display:flex;gap:2px;padding:4px;border-radius:999px;background:color-mix(in oklab,var(--card) 82%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 0 0 1px var(--line-2),0 10px 30px -14px rgba(0,0,0,.3);font:500 12px/1 var(--mono)}
+.switch a{padding:8px 12px;border-radius:999px;color:var(--muted);white-space:nowrap}
+.switch a:hover{color:var(--text)}
+.switch a[aria-current]{background:var(--text);color:var(--bg)}
+.toast{position:fixed;left:50%;bottom:66px;transform:translate(-50%,8px);z-index:41;font-size:13px;background:var(--text);color:var(--bg);padding:8px 12px;border-radius:10px;opacity:0;transition:opacity .2s,transform .3s var(--ease);pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:980px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto}
+  .c{grid-column:span 2!important;grid-row:auto!important;min-height:var(--mh,auto)}
+  .c.half{grid-column:span 1!important}
+  .lull .txt{max-width:none}
+  .phone{position:relative;right:auto;top:auto;margin:28px auto -120px;width:210px;height:430px}
+  .win{position:relative;left:auto;right:auto;top:auto;bottom:auto;margin:24px -40px -40px 0}
+  .term{position:relative;left:auto;right:auto;bottom:auto;margin-top:26px;white-space:pre-wrap}
+  .chart{position:relative;left:auto;right:auto;bottom:auto;margin-top:26px}
+  .stats .lab{position:static;padding:22px 24px 0}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}
+  .stats .lab{grid-column:1 / -1}
+}
+@media (max-width:620px){
+  .c.half{grid-column:span 2!important}
+  .vids{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr}
+  .stat+.stat{box-shadow:inset 0 1px 0 var(--line)}
+  .wbody{grid-template-columns:1fr}
+  .wbody .notes{display:none}
+  .nav .pill:not(:last-child){display:none}
+  .switch{font-size:11px}.switch a{padding:8px 10px}
+}
+@media (prefers-reduced-motion:reduce){.c,.bar i,.cbar .tr i{animation:none}.pulse::after,.cur{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="id"><span class="dot" aria-hidden="true">SM<img src="portrait.jpg" alt="" onerror="this.remove()"></span>Scott Moss</div>
+    <nav class="nav" aria-label="Elsewhere"><a class="pill" href="#">YouTube</a><a class="pill" href="#">GitHub</a><a class="pill" href="#">X</a></nav>
+  </header>
+
+  <div class="grid">
+    <section class="c pad intro" style="grid-column:span 8;grid-row:span 5;--i:0;--mh:340px">
+      <div class="lab"><span class="pulse" aria-hidden="true"></span>Available for a few advisory projects</div>
+      <h1>I build apps, open-source tools and AI experiments. <span>Then I teach all of it on YouTube.</span></h1>
+      <div class="btns">
+        <a class="btn solid" href="#work">See the work</a>
+        <a class="btn" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.8 15V9l5.2 3z"/></svg>YouTube</a>
+        <button class="btn copy" type="button" data-email="hello@example.com">Copy email</button>
+      </div>
+    </section>
+
+    <div class="c portrait" style="grid-column:span 4;grid-row:span 5;--i:1;--mh:380px">
+      <span class="mono" aria-hidden="true">SM</span>
+      <img src="portrait.jpg" alt="Portrait of Scott Moss" onerror="this.remove()">
+      <span class="cap">Portrait</span>
+    </div>
+
+    <a class="c pad lull" id="work" href="#" style="grid-column:span 7;grid-row:span 7;--i:2;--mh:520px">
+      <div class="txt">
+        <div class="lab"><span class="tag">iOS app</span>2026</div>
+        <div class="title">Lull</div>
+        <p class="desc">A focus timer that learns when you do your best work, then stays out of the way.</p>
+        <div class="meta">12,408 users · 4.8 rating</div>
+      </div>
+      <div class="phone" aria-hidden="true"><div class="scr">
+        <div class="isl"></div>
+        <div class="h">Deep work</div><div class="s">Session 3 of 4</div>
+        <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="43" fill="none" stroke="#F8D9CB" stroke-width="7"/><circle class="fg" cx="50" cy="50" r="43" fill="none" stroke="#F05A36" stroke-width="7" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="28"/></svg><span>18:24</span></div>
+        <div class="chip">You focus best before 11am</div>
+      </div></div>
+    </a>
+
+    <section class="c pad now" style="grid-column:span 5;grid-row:span 3;--i:3">
+      <div class="lab"><span class="pulse" aria-hidden="true"></span>Now</div>
+      <div class="row"><b>agent-runtime</b><span></span><span>v0.4</span><div class="bar"><i style="width:64%"></i></div></div>
+      <div class="row"><b>Video: memory for agents</b><span></span><span>editing</span><div class="bar"><i style="width:82%"></i></div></div>
+    </section>
+
+    <section class="c stats" style="grid-column:span 5;grid-row:span 4;--i:4">
+      <div class="lab">By the numbers</div>
+      <div class="stat"><b>124k</b><span>YouTube subscribers</span></div>
+      <div class="stat"><b>8.1k</b><span>GitHub stars</span></div>
+      <div class="stat"><b>15k</b><span>App users</span></div>
+    </section>
+
+    <a class="c pad margin" href="#" style="grid-column:span 6;grid-row:span 7;--i:5;--mh:460px">
+      <div class="txt">
+        <div class="lab"><span class="tag">Web app</span>2025</div>
+        <div class="title">Margin</div>
+        <p class="desc">A script editor built for YouTube, with notes that live in the margin.</p>
+      </div>
+      <span class="go" aria-hidden="true"><svg viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg></span>
+      <div class="win" aria-hidden="true">
+        <div class="wbar"><i></i><i></i><i></i><span>margin.app/episode-42</span></div>
+        <div class="wbody">
+          <div><h4>Cold open</h4><p>Last week I deleted four thousand lines from my editor.</p><p><mark>Nothing broke.</mark> That should scare you a little.</p><p>Here’s what all that code was doing.</p></div>
+          <div class="notes"><div class="mnote" style="margin-top:44px"><b>B-roll</b>git diff scrolling past</div><div class="mnote"><b>Cut?</b>Maybe too dramatic</div></div>
+        </div>
+      </div>
+    </a>
+
+    <a class="c pad kit" href="#" style="grid-column:span 6;grid-row:span 7;--i:6;--mh:400px">
+      <div class="lab"><span class="tag">Open source</span>TypeScript</div>
+      <div class="title">agent-kit</div>
+      <p class="desc">Small primitives for tool-using agents. No framework, no magic.</p>
+      <span class="go" aria-hidden="true"><svg viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg></span>
+      <div class="term" aria-hidden="true"><span class="k">import</span> { plan, call } <span class="k">from</span> <span class="s">"agent-kit"</span>
+
+<span class="k">const</span> run = <span class="k">await</span> plan(task)
+<span class="k">for</span> (<span class="k">const</span> step <span class="k">of</span> run) <span class="k">await</span> call(step)
+
+<span class="c">// 4.2k stars · 38k installs a week</span>
+<span class="cur"></span></div>
+    </a>
+
+    <section class="c pad" style="grid-column:span 8;grid-row:span 6;--i:7">
+      <div class="lab"><span class="tag">YouTube</span>Latest videos</div>
+      <a class="go" href="#" aria-label="All videos"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg></a>
+      <div class="vids">
+        <a class="vid" href="#"><div class="thumb"><div class="th th1"><b>I deleted <mark>everything</mark></b></div><em>18:42</em></div><div class="vt">I rebuilt my editor in a weekend</div><div class="vm">148k views</div></a>
+        <a class="vid" href="#"><div class="thumb"><div class="th th2"><pre>while (!done) {
+  plan(); act()
+}</pre><b>An agent from one empty file</b></div><em>32:10</em></div><div class="vt">Building an agent from scratch</div><div class="vm">92k views</div></a>
+        <a class="vid" href="#"><div class="thumb"><div class="th th3"><div class="b" aria-hidden="true"><i style="height:41%"></i><i style="height:63%"></i><i style="height:72%"></i></div><b>Do agents need memory?</b></div><em>14:05</em></div><div class="vt">What 40 runs taught me about memory</div><div class="vm">61k views</div></a>
+      </div>
+    </section>
+
+    <a class="c pad research" href="#" style="grid-column:span 4;grid-row:span 6;--i:8;--mh:360px">
+      <div class="lab"><span class="tag">Research</span>Mar 2026</div>
+      <div class="title" style="font-size:24px">Do agents need memory?</div>
+      <p class="desc">Forty tasks against three memory setups.</p>
+      <div class="chart" aria-label="Task success: none 41%, scratchpad 63%, retrieval 72%">
+        <div class="cbar"><span>None</span><span class="tr"><i style="width:41%"></i></span><span>41%</span></div>
+        <div class="cbar"><span>Scratchpad</span><span class="tr"><i style="width:63%"></i></span><span>63%</span></div>
+        <div class="cbar best"><span>Retrieval</span><span class="tr"><i style="width:72%"></i></span><span>72%</span></div>
+        <small>The scratchpad got 71% of the gain for a tenth of the tokens.</small>
+      </div>
+    </a>
+
+    <a class="c pad mini half" href="#" style="grid-column:span 4;grid-row:span 3;--i:9">
+      <div class="lab"><span class="tag">macOS app</span></div>
+      <div class="meta">Beta</div>
+      <div class="title">Relay</div>
+      <p class="desc">A menu bar inbox for agent runs.</p>
+    </a>
+    <a class="c pad mini half" href="#" style="grid-column:span 4;grid-row:span 3;--i:10">
+      <div class="lab"><span class="tag">Open source</span></div>
+      <div class="meta">2.9k stars</div>
+      <div class="title">tiny-store</div>
+      <p class="desc">State management in under a kilobyte.</p>
+    </a>
+    <a class="c pad mini half" href="#" style="grid-column:span 4;grid-row:span 3;--i:11">
+      <div class="lab"><span class="tag">Research</span></div>
+      <div class="meta">Aug 2026</div>
+      <div class="title">Tool choice under pressure</div>
+      <p class="desc">What happens when an agent gets fifty tools.</p>
+    </a>
+
+    <section class="c pad contact" style="grid-column:span 12;grid-row:span 3;--i:12">
+      <h2>Have something worth building? <span>Let’s talk.</span></h2>
+      <div class="btns"><button class="btn solid copy" type="button" data-email="hello@example.com">Copy email</button><a class="btn" href="#">Book a call</a></div>
+    </section>
+  </div>
+
+  <div class="foot"><span>© 2026 Scott Moss</span><span>Placeholder projects and numbers</span></div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<nav class="switch" aria-label="Design variations">
+  <a href="index.html">A · Index</a><a href="bento.html" aria-current="page">B · Bento</a><a href="profile.html">C · Profile</a>
+</nav>
+
+<script>
+(() => {
+  const toast = document.getElementById('toast');
+  let tt = 0;
+  document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', async () => {
+    const email = b.dataset.email;
+    try { await navigator.clipboard.writeText(email); toast.textContent = 'Copied ' + email; }
+    catch (e) { toast.textContent = email; }
+    toast.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => toast.classList.remove('on'), 1800);
+  }));
+})();
+</script>
+</body>
+</html>

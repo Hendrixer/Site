@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gargantua</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Hanken+Grotesk:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: a full-bleed, ray-traced black hole. Your name sits behind it and gravity bends it. UI is pinned to the four corners, like a film's title card. */
+  --void:#020203;
+  --star:#EDE7DA;
+  --dim:#9A948A;
+  --faint:#5E5A53;
+  --gold:#E9B872;
+  --line:rgba(237,231,218,.16);
+  --display:"Bodoni Moda",Didot,"Bodoni 72","Bodoni MT",serif;
+  --ui:"Hanken Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --g:clamp(16px,2.6vw,34px);
+  --ease:cubic-bezier(.2,.8,.2,1);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--void);color:var(--star);overflow:hidden;-webkit-font-smoothing:antialiased}
+body{font:400 14px/1.5 var(--ui)}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;background:var(--void)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:1px solid var(--gold);outline-offset:4px}
+
+.ui{position:fixed;inset:0;z-index:2;pointer-events:none;transition:opacity 1.2s var(--ease)}
+.ui>*{pointer-events:auto}
+body.diving .ui,body.inside .ui{opacity:0}
+body.diving .ui>*,body.inside .ui>*{pointer-events:none}
+.tl{position:absolute;top:var(--g);left:var(--g)}
+.tr{position:absolute;top:var(--g);right:var(--g);display:flex;gap:26px}
+.bl{position:absolute;bottom:var(--g);left:var(--g)}
+.br{position:absolute;bottom:var(--g);right:var(--g);text-align:right;transition:opacity .6s var(--ease)}
+.name{font:500 20px/1 var(--display);letter-spacing:.01em;margin:0}
+.role{font:12px/1.55 var(--mono);color:var(--dim);margin:10px 0 0;max-width:30ch}
+.lab{font:500 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.navbtn{appearance:none;background:none;border:0;cursor:pointer;padding:6px 0;font:500 11.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--star);transition:color .3s}
+.navbtn:hover{color:var(--gold)}
+.navbtn[aria-pressed="true"]{color:var(--gold)}
+.clock{font:12px/1.75 var(--mono);color:var(--dim);font-variant-numeric:tabular-nums;margin-top:10px;display:grid;grid-template-columns:auto auto;column-gap:18px}
+.clock b{font-weight:400;color:var(--star)}
+.tele{font:11.5px/1.75 var(--mono);color:var(--dim);font-variant-numeric:tabular-nums;margin-top:10px}
+body.about .br{opacity:0;pointer-events:none}
+
+.index{position:absolute;left:var(--g);top:50%;transform:translateY(-50%);transition:opacity .7s var(--ease),transform .9s var(--ease)}
+.index ol{list-style:none;margin:16px 0 0;padding:0}
+.index button{appearance:none;background:none;border:0;cursor:pointer;text-align:left;display:grid;grid-template-columns:30px auto;column-gap:8px;align-items:baseline;padding:7px 0;transition:opacity .45s var(--ease),transform .6s var(--ease)}
+.index .n{font:11px/1 var(--mono);color:var(--faint);font-variant-numeric:tabular-nums}
+.index .t{font:italic 400 clamp(20px,1.9vw,27px)/1.12 var(--display);text-shadow:0 0 18px rgba(0,0,0,.9)}
+.index .k{grid-column:2;font:10.5px/1.7 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.index ol:hover button,.index ol:focus-within button{opacity:.3}
+.index ol button:hover,.index ol button:focus-visible{opacity:1;transform:translateX(8px)}
+body.about .index{opacity:0;transform:translate(-24px,-50%);pointer-events:none}
+
+.bio{position:absolute;right:var(--g);bottom:var(--g);width:min(360px,calc(100vw - 2*var(--g)));opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .8s var(--ease),transform .9s var(--ease)}
+body.about .bio{opacity:1;transform:none;pointer-events:auto;transition-delay:.5s}
+.bio p{margin:14px 0 0;font:italic 400 21px/1.38 var(--display)}
+.bio p+p{font:15px/1.6 var(--ui);font-style:normal;color:var(--dim)}
+.photo{display:inline-flex;align-items:center;gap:10px;margin-top:20px;cursor:pointer;font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid currentColor;padding-bottom:5px}
+.photo input{position:absolute;opacity:0;width:1px;height:1px}
+.photo:focus-within{outline:1px solid var(--gold);outline-offset:4px}
+.hint{display:block;margin-top:10px;font:11.5px/1.5 var(--mono);color:var(--faint)}
+
+.proj{position:fixed;inset:0;z-index:3;overflow-y:auto;display:grid;align-items:center;padding:calc(var(--g) * 2.2) var(--g);opacity:0;visibility:hidden;transition:opacity .7s var(--ease),visibility 0s .7s}
+.proj.on{opacity:1;visibility:visible;transition:opacity 1.4s var(--ease)}
+.proj-in{max-width:1080px;width:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(32px,6vw,88px);align-items:end}
+.proj h2{font:400 clamp(52px,8.4vw,128px)/.9 var(--display);letter-spacing:-.025em;margin:20px 0 26px;text-wrap:balance}
+.proj .lede{font:italic 400 clamp(19px,1.8vw,24px)/1.4 var(--display);margin:0;max-width:30ch}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:12px 28px;margin:0 0 30px;padding:0 0 26px;border-bottom:1px solid var(--line);font:12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.facts dt{color:var(--faint);letter-spacing:.12em;text-transform:uppercase;font-size:10.5px;padding-top:2px}
+.facts dd{margin:0}
+.proj-body p{margin:0 0 14px;color:var(--dim);font:15.5px/1.68 var(--ui);max-width:50ch}
+.back{appearance:none;background:none;border:0;cursor:pointer;margin-top:18px;padding:6px 0;font:500 11.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid currentColor}
+
+.drop{position:fixed;inset:var(--g);z-index:4;border:1px dashed var(--gold);display:grid;place-items:center;font:500 12px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gold);background:rgba(2,2,3,.5);opacity:0;pointer-events:none;transition:opacity .25s}
+body.dragging .drop{opacity:1}
+.small{position:fixed;left:50%;bottom:var(--g);transform:translateX(-50%);z-index:2;font:10.5px/1.4 var(--mono);color:var(--faint);letter-spacing:.06em;white-space:nowrap;transition:opacity .8s}
+body.about .small,body.diving .small,body.inside .small{opacity:0}
+.nogl-msg{display:none}
+body.nogl .nogl-msg{display:grid;position:fixed;inset:0;place-items:center;text-align:center;font:italic 400 22px/1.4 var(--display);color:var(--dim);padding:var(--g)}
+
+@media (max-width:760px){
+  .index{top:auto;bottom:calc(var(--g) + 96px);transform:none}
+  .index button{padding:5px 0}
+  .index .k{display:none}
+  .index .t{font-size:19px}
+  body.about .index{transform:translateX(-24px)}
+  .br{display:none}
+  .small{display:none}
+  .proj-in{grid-template-columns:1fr;gap:28px;align-items:start}
+  .bio{bottom:calc(var(--g) + 100px)}
+  .bio p{font-size:18px}
+}
+@media (max-height:720px) and (min-width:761px){.index .k{display:none}.index button{padding:4px 0}.index .t{font-size:20px}}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;transition-delay:0s!important}}
+</style>
+</head>
+<body>
+<canvas id="gl" aria-label="A black hole bending the light of the text behind it"></canvas>
+
+<div class="ui">
+  <div class="tl">
+    <h1 class="name">Scott Moss</h1>
+    <p class="role">Builds apps, open source and AI research. Explains it all on YouTube.</p>
+  </div>
+  <nav class="tr" aria-label="Site">
+    <button class="navbtn" id="nav-work" type="button" aria-pressed="true">Work</button>
+    <button class="navbtn" id="nav-about" type="button" aria-pressed="false">About</button>
+  </nav>
+
+  <nav class="index" id="index" aria-label="Work">
+    <div class="lab">Selected work</div>
+    <ol id="list"></ol>
+  </nav>
+
+  <div class="bl">
+    <div class="lab">Time dilation · 1 hour here is 7 years on Earth</div>
+    <div class="clock"><span>Here</span><b id="t-here">00:00:00</b><span>Earth</span><b id="t-earth">0 d 00 h</b></div>
+  </div>
+  <div class="br">
+    <div class="lab">Gargantua</div>
+    <div class="tele" id="tele">r 24.0 Rs · i 84.0°</div>
+  </div>
+
+  <section class="bio" id="about" aria-label="About">
+    <div class="lab">About</div>
+    <p>I build products and the tools behind them, then show my work.</p>
+    <p>Apps, open source and AI research, explained on YouTube. Light bends around everything here, including me.</p>
+    <label class="photo"><input type="file" accept="image/*" id="photo">Use your photo</label>
+    <span class="hint">Or drop one anywhere. It stays in your browser.</span>
+  </section>
+</div>
+
+<div class="small">Move to orbit · Hover a project to bend it · Placeholder projects</div>
+
+<section class="proj" id="proj" aria-live="polite" aria-hidden="true">
+  <div class="proj-in">
+    <div>
+      <div class="lab" id="p-eye">Past the event horizon</div>
+      <h2 id="p-title">Lull</h2>
+      <p class="lede" id="p-lede"></p>
+    </div>
+    <div>
+      <dl class="facts" id="p-facts"></dl>
+      <div class="proj-body" id="p-body"></div>
+      <button class="back" id="p-back" type="button">Climb back out</button>
+    </div>
+  </div>
+</section>
+
+<div class="drop" aria-hidden="true">Drop to see yourself lensed</div>
+<div class="nogl-msg">This one needs WebGL 2. Try a recent Chrome, Safari or Firefox.</div>
+
+<script id="fs" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime, uSpin, uTanFov, uPlaneL, uMix, uDisk, uExp, uDop, uTextGain;
+uniform vec3 uCam, uFwd, uRight, uUp;
+uniform vec2 uHalfA, uHalfB, uShift;
+uniform sampler2D uTexA, uTexB;
+out vec4 outColor;
+
+const float RIN = 2.6;
+const float ROUT = 11.0;
+
+float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+float hash13(vec3 p3){ p3 = fract(p3 * .1031); p3 += dot(p3, p3.zyx + 31.32); return fract((p3.x + p3.y) * p3.z); }
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3. - 2. * f);
+  return mix(mix(hash12(i), hash12(i + vec2(1, 0)), u.x), mix(hash12(i + vec2(0, 1)), hash12(i + vec2(1, 1)), u.x), u.y);
+}
+float fbm(vec2 p){
+  float s = 0., a = .5;
+  for (int i = 0; i < 5; i++){ s += a * noise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= .5; }
+  return s;
+}
+float polar(float A, float r, float ka, float kr){
+  float s1 = fbm(vec2(A * ka, r * kr));
+  float s2 = fbm(vec2((A - 1.) * ka, r * kr));
+  return mix(s1, s2, smoothstep(.82, 1., A));
+}
+
+vec3 sky(vec3 d){
+  vec3 c = vec3(0.);
+  for (int l = 0; l < 2; l++){
+    float sc = l == 0 ? 80. : 210.;
+    vec3 p = d * sc;
+    vec3 id = floor(p);
+    vec3 f = fract(p) - .5;
+    float h = hash13(id + float(l) * 17.1);
+    if (h > .87){
+      vec3 o = (vec3(hash13(id + 1.3), hash13(id + 2.7), hash13(id + 5.1)) - .5) * .7;
+      float dd = length(f - o);
+      float b = smoothstep(.11, 0., dd) * pow((h - .87) / .13, 2.5) * (l == 0 ? 2.2 : .9);
+      c += b * mix(vec3(1., .8, .6), vec3(.72, .82, 1.), hash13(id + 9.));
+    }
+  }
+  float band = exp(-pow(d.y * 3.4 + .35 * d.x, 2.));
+  c += band * vec3(.035, .03, .026) * (.5 + fbm(d.xz * 5. + d.y * 3.));
+  return c;
+}
+
+vec4 disk(vec3 p, vec3 v){
+  float r = length(p.xz);
+  float x = (r - RIN) / (ROUT - RIN);
+  float w = 2.4 * pow(r, -1.5);
+  float A = fract((atan(p.z, p.x) - w * uTime * uSpin) / 6.2831853);
+  float s = polar(A, r, 13., 1.9) * .75 + polar(A, r, 41., 5.5) * .45;
+  float dens = smoothstep(0., .05, x) * pow(1. - x, 1.4) * (.18 + 1.25 * s * s);
+  float T = pow(RIN / r, .8);
+  vec3 c = mix(vec3(.95, .3, .07), vec3(1., .7, .4), smoothstep(.1, .65, T));
+  c = mix(c, vec3(1., .94, .86), smoothstep(.7, 1., T));
+  vec3 orb = normalize(vec3(-p.z, 0., p.x)) * sqrt(.5 / r);
+  float dop = clamp(1. + dot(orb, -normalize(v)) * uDop, .45, 1.7);
+  float I = dens * (.5 + 2.6 * T) * dop * dop * sqrt(max(1. - 1. / r, 0.));
+  return vec4(c * I * uDisk, clamp(dens * 1.5, 0., 1.));
+}
+
+vec3 tex(sampler2D t, vec2 l, vec2 hs){
+  vec2 uv = l / (2. * hs) + .5;
+  if (uv.x < 0. || uv.y < 0. || uv.x > 1. || uv.y > 1.) return vec3(0.);
+  vec3 c = texture(t, uv).rgb;
+  return c * c;
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y;
+  vec3 vel = normalize(uFwd + (uv.x * uRight + uv.y * uUp) * 2. * uTanFov);
+  vec3 pos = uCam;
+  vec3 hv = cross(pos, vel);
+  float h2 = dot(hv, hv);
+  vec3 col = vec3(0.);
+  float alpha = 0.;
+  float glow = 0.;
+  bool captured = false;
+
+  for (int i = 0; i < __STEPS__; i++){
+    float r2 = dot(pos, pos);
+    float r = sqrt(r2);
+    if (r < 1.){ captured = true; break; }
+    float dt = clamp(.075 * r, .03, 2.4);
+    vel += -1.5 * h2 * pos / (r2 * r2 * r) * dt;
+    vec3 np = pos + vel * dt;
+    if (pos.y * np.y < 0.){
+      float tt = pos.y / (pos.y - np.y);
+      vec3 hp = mix(pos, np, tt);
+      float hr = length(hp.xz);
+      if (hr > RIN && hr < ROUT){
+        vec4 d = disk(hp, vel);
+        col += (1. - alpha) * d.rgb * d.a;
+        alpha += (1. - alpha) * d.a;
+        if (alpha > .985) break;
+      }
+    }
+    float pr = length(np.xz);
+    glow += dt * exp(-abs(np.y) * 2.2) * smoothstep(ROUT + 3., RIN, pr) * step(1.2, pr) * (1. - alpha);
+    pos = np;
+    if (r2 > 1600. && dot(pos, vel) > 0.) break;
+  }
+
+  if (!captured && alpha < .985){
+    vec3 d = normalize(vel);
+    vec3 bg = sky(d);
+    float dn = dot(d, uFwd);
+    if (dn > .02){
+      vec3 center = uCam + uFwd * uPlaneL + uRight * uShift.x + uUp * uShift.y;
+      float t = dot(center - pos, uFwd) / dn;
+      vec3 hp = pos + d * t;
+      vec2 l = vec2(dot(hp - center, uRight), dot(hp - center, uUp));
+      bg += mix(tex(uTexA, l, uHalfA), tex(uTexB, l, uHalfB), uMix) * uTextGain;
+    }
+    col += (1. - alpha) * bg;
+  }
+  col += glow * .016 * vec3(1., .55, .25) * uDisk;
+
+  col *= uExp;
+  col = (col * (2.51 * col + .03)) / (col * (2.43 * col + .59) + .14);
+  col = pow(clamp(col, 0., 1.), vec3(1. / 2.1));
+  vec2 q = gl_FragCoord.xy / uRes;
+  col *= .55 + .45 * pow(16. * q.x * q.y * (1. - q.x) * (1. - q.y), .22);
+  col += (hash12(gl_FragCoord.xy + fract(uTime * 7.31) * 311.) - .5) * .045;
+  outColor = vec4(col, 1.);
+}
+</script>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+const body = document.body;
+
+const PROJ = [
+  { t: 'Lull', k: 'iOS app', lens: ['LULL'],
+    lede: 'A focus timer that learns when you do your best work, then stays out of the way.',
+    facts: [['Type', 'iOS app'], ['Shipped', 'Mar 2026'], ['Users', '12,408'], ['Role', 'Design and engineering']],
+    body: ['The first beta shipped every feature people asked for. Retention was 22%. Version 1.0 cut it back to one ring and one button, and retention nearly doubled.', 'The only feature added since is a suggestion that knows when you focus best.'] },
+  { t: 'Margin', k: 'Web app', lens: ['MARGIN'],
+    lede: 'A script editor built for YouTube, with notes that live in the margins.',
+    facts: [['Type', 'Web app'], ['Status', 'Public beta'], ['Writers', '2,130'], ['Stack', 'TypeScript, CRDTs']],
+    body: ['Scripts, B-roll notes and read-aloud timing in one document. Built because every video started in four different apps.'] },
+  { t: 'agent-kit', k: 'Open source', lens: ['AGENT-KIT'],
+    lede: 'Small, sharp primitives for building agents that use tools.',
+    facts: [['License', 'MIT'], ['Stars', '4,212'], ['Installs', '38k a week'], ['Language', 'TypeScript']],
+    body: ['Plan, call, observe, repeat. agent-kit gives you those four verbs and gets out of the way. No framework, no magic.'] },
+  { t: 'I rebuilt my editor in a weekend', k: 'Video', lens: ['REBUILT IN', 'A WEEKEND'],
+    lede: 'Forty-eight hours, four thousand deleted lines and nothing broke.',
+    facts: [['Format', 'YouTube'], ['Length', '18:42'], ['Views', '148k'], ['Chapters', '4']],
+    body: ['What all that code was doing, and why none of it mattered. A video about deleting your way to a better product.'] },
+  { t: 'Do agents need memory?', k: 'Research', lens: ['DO AGENTS', 'NEED MEMORY?'],
+    lede: 'Forty tasks, three memory setups and one result I didn’t expect.',
+    facts: [['Type', 'Research note'], ['Tasks', '40'], ['Best', 'Retrieval, 72%'], ['Published', 'Mar 2026']],
+    body: ['Retrieval scored highest. A plain scratchpad captured 71% of that gain for a tenth of the tokens.'] }
+];
+
+const list = $('#list');
+PROJ.forEach((p, i) => {
+  const li = document.createElement('li');
+  li.innerHTML = '<button type="button" data-i="' + i + '"><span class="n">0' + (i + 1) + '</span><span class="t"></span><span class="k"></span></button>';
+  li.querySelector('.t').textContent = p.t;
+  li.querySelector('.k').textContent = p.k;
+  list.appendChild(li);
+});
+
+const cv = $('#gl');
+let gl = null;
+try { gl = cv.getContext('webgl2', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' }); } catch (e) { gl = null; }
+if (!gl) { body.classList.add('nogl'); return; }
+
+const STEPS = coarse ? 150 : 230;
+const VS = '#version 300 es\nin vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+const FS = $('#fs').textContent.replace('__STEPS__', STEPS);
+function sh(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+let prog;
+try {
+  prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+} catch (e) { console.error(e); body.classList.add('nogl'); return; }
+gl.useProgram(prog);
+const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prog, 'p');
+gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = {};
+['uRes', 'uTime', 'uSpin', 'uTanFov', 'uPlaneL', 'uMix', 'uDisk', 'uExp', 'uDop', 'uTextGain', 'uCam', 'uFwd', 'uRight', 'uUp', 'uHalfA', 'uHalfB', 'uShift', 'uTexA', 'uTexB'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+gl.uniform1i(U.uTexA, 0); gl.uniform1i(U.uTexB, 1);
+
+function mkTex() {
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+  return t;
+}
+function upload(t, c) {
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+  gl.generateMipmap(gl.TEXTURE_2D);
+}
+
+function textCanvas(lines) {
+  const c = document.createElement('canvas');
+  c.width = 2048; c.height = 1024;
+  const x = c.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, 2048, 1024);
+  x.fillStyle = '#F1EADC';
+  x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  let size = 400;
+  const setFont = () => { x.font = '500 ' + size + 'px "Bodoni Moda", Didot, "Bodoni 72", serif'; if ('letterSpacing' in x) x.letterSpacing = Math.round(size * .03) + 'px'; };
+  setFont();
+  const maxW = Math.max(...lines.map(l => x.measureText(l).width));
+  size = Math.min(400, size * 1720 / maxW, lines.length > 1 ? 330 : 400);
+  setFont();
+  const lh = size * (lines.length > 1 ? 1.32 : 1), cap = size * .7;
+  const y0 = 512 - (lines.length - 1) * lh / 2 + cap / 2;
+  lines.forEach((l, i) => x.fillText(l, 1024, y0 + i * lh));
+  return c;
+}
+
+const portrait = document.createElement('canvas');
+portrait.width = 1024; portrait.height = 1280;
+function placeholderPortrait() {
+  const x = portrait.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, 1024, 1280);
+  const shape = (ox) => {
+    x.beginPath();
+    x.ellipse(512 + ox, 520, 168, 214, 0, 0, Math.PI * 2);
+    x.moveTo(430 + ox, 690); x.lineTo(594 + ox, 690); x.lineTo(610 + ox, 860); x.lineTo(414 + ox, 860); x.closePath();
+    x.moveTo(110 + ox, 1280);
+    x.bezierCurveTo(130 + ox, 1010, 250 + ox, 900, 512 + ox, 860);
+    x.bezierCurveTo(774 + ox, 900, 894 + ox, 1010, 914 + ox, 1280);
+    x.closePath();
+  };
+  const rim = x.createLinearGradient(300, 0, 900, 0);
+  rim.addColorStop(0, '#3A2A1A'); rim.addColorStop(1, '#F2C688');
+  shape(0); x.fillStyle = rim; x.fill();
+  shape(-16); const core = x.createRadialGradient(470, 520, 40, 470, 620, 640);
+  core.addColorStop(0, '#2A2420'); core.addColorStop(1, '#0B0A09');
+  x.fillStyle = core; x.fill();
+}
+placeholderPortrait();
+
+const texA = mkTex(), texB = mkTex();
+const slots = [{ tex: texA, kind: 'text', key: '' }, { tex: texB, kind: 'text', key: '' }];
+const sources = {
+  name: () => textCanvas(['SCOTT', 'MOSS']),
+  portrait: () => portrait
+};
+PROJ.forEach((p, i) => sources['p' + i] = () => textCanvas(p.lens));
+
+const S = { dist: 74, distT: 24, az: .5, azDrag: 0, el: .1, aim: 0, aimT: 0, disk: 1, diskT: 1, mix: 0, mixT: 0, exp: 0, expT: 1, fov: 50, fovT: 50, dive: 0 };
+let mode = 'orbit';
+let pendingKey = null;
+
+function setSlot(slot, key) {
+  slot.key = key;
+  slot.kind = key === 'portrait' ? 'portrait' : 'text';
+  upload(slot.tex, sources[key]());
+}
+function showBackdrop(key) {
+  if (S.mixT === 1 && slots[1].key === key) return;
+  if (S.mixT === 0 && slots[0].key === key) return;
+  if (S.mixT === 1 && slots[0].key === key) { S.mixT = 0; return; }
+  if (S.mix > .02 && S.mix < .98) {
+    if (S.mix > .5) { slots.reverse(); S.mix = 1 - S.mix; }
+  }
+  setSlot(slots[1], key);
+  S.mixT = 1;
+}
+function settleMix() {
+  if (S.mixT === 1 && S.mix > .995) { slots.reverse(); S.mix = 0; S.mixT = 0; }
+}
+
+function idleKey() { return mode === 'about' ? 'portrait' : 'name'; }
+
+list.addEventListener('pointerover', e => { const b = e.target.closest('button'); if (b && mode === 'orbit') showBackdrop('p' + b.dataset.i); });
+list.addEventListener('focusin', e => { const b = e.target.closest('button'); if (b && mode === 'orbit') showBackdrop('p' + b.dataset.i); });
+list.addEventListener('pointerleave', () => { if (mode === 'orbit') showBackdrop('name'); });
+list.addEventListener('focusout', e => { if (!list.contains(e.relatedTarget) && mode === 'orbit') showBackdrop('name'); });
+list.addEventListener('click', e => { const b = e.target.closest('button'); if (b) enter(+b.dataset.i); });
+
+const navWork = $('#nav-work'), navAbout = $('#nav-about');
+function setAbout(on) {
+  if (mode === 'diving' || mode === 'inside') return;
+  mode = on ? 'about' : 'orbit';
+  body.classList.toggle('about', on);
+  navAbout.setAttribute('aria-pressed', String(on));
+  navWork.setAttribute('aria-pressed', String(!on));
+  S.aimT = on ? 1 : 0;
+  S.diskT = on ? .7 : 1;
+  showBackdrop(idleKey());
+}
+navAbout.addEventListener('click', () => setAbout(mode !== 'about'));
+navWork.addEventListener('click', () => setAbout(false));
+
+const proj = $('#proj');
+let diveFrom = 0, diveDir = 0, diveStart = 0;
+function enter(i) {
+  const p = PROJ[i];
+  $('#p-eye').textContent = 'Past the event horizon · 0' + (i + 1) + ' / 0' + PROJ.length;
+  $('#p-title').textContent = p.t;
+  $('#p-lede').textContent = p.lede;
+  $('#p-facts').innerHTML = p.facts.map(([a, b]) => '<dt>' + a + '</dt><dd>' + b + '</dd>').join('');
+  $('#p-body').innerHTML = p.body.map(t => '<p>' + t + '</p>').join('');
+  showBackdrop('p' + i);
+  mode = 'diving'; body.classList.add('diving');
+  diveDir = 1; diveStart = performance.now(); diveFrom = S.dive;
+}
+function leave() {
+  proj.classList.remove('on'); proj.setAttribute('aria-hidden', 'true');
+  body.classList.remove('inside');
+  mode = 'diving'; body.classList.add('diving');
+  diveDir = -1; diveStart = performance.now() + 500; diveFrom = S.dive;
+}
+$('#p-back').addEventListener('click', leave);
+addEventListener('keydown', e => {
+  if (e.key === 'Escape') { if (mode === 'inside') leave(); else if (mode === 'about') setAbout(false); }
+});
+
+function loadPhoto(file) {
+  if (!file || !/^image\//.test(file.type)) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const x = portrait.getContext('2d');
+      x.fillStyle = '#000'; x.fillRect(0, 0, 1024, 1280);
+      const s = Math.max(1024 / img.width, 1280 / img.height);
+      const w = img.width * s, h = img.height * s;
+      x.filter = 'saturate(.7) contrast(1.06)';
+      x.drawImage(img, (1024 - w) / 2, (1280 - h) / 2, w, h);
+      x.filter = 'none';
+      slots.forEach(sl => { if (sl.key === 'portrait') upload(sl.tex, portrait); });
+      if (mode !== 'about') setAbout(true);
+    };
+    img.src = r.result;
+  };
+  r.readAsDataURL(file);
+}
+$('#photo').addEventListener('change', e => loadPhoto(e.target.files[0]));
+let dragDepth = 0;
+addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; body.classList.add('dragging'); });
+addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; body.classList.remove('dragging'); } });
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; body.classList.remove('dragging'); loadPhoto(e.dataTransfer.files[0]); });
+
+let mx = 0, my = 0, smx = 0, smy = 0, lastTouchX = null;
+addEventListener('pointermove', e => {
+  if (e.pointerType === 'mouse') { mx = e.clientX / innerWidth * 2 - 1; my = e.clientY / innerHeight * 2 - 1; }
+  else if (lastTouchX !== null) { S.azDrag += (e.clientX - lastTouchX) * .004; lastTouchX = e.clientX; }
+});
+cv.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') lastTouchX = e.clientX; });
+addEventListener('pointerup', () => { lastTouchX = null; });
+addEventListener('pointercancel', () => { lastTouchX = null; });
+
+let scale = coarse ? .5 : .66, W = 0, H = 0;
+function resize() {
+  const w = Math.max(2, Math.round(innerWidth * scale)), h = Math.max(2, Math.round(innerHeight * scale));
+  if (w === W && h === H) return;
+  W = w; H = h; cv.width = w; cv.height = h;
+  gl.viewport(0, 0, w, h);
+}
+addEventListener('resize', resize);
+resize();
+
+const norm = v => { const l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; };
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const add = (a, b, s = 1) => [a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s];
+const ease = (k, dt) => 1 - Math.exp(-dt * k);
+const easeIn = t => t * t * t;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+const tHere = $('#t-here'), tEarth = $('#t-earth'), tele = $('#tele');
+const pad = n => String(n).padStart(2, '0');
+const t0 = performance.now();
+let lastUi = 0, last = performance.now(), simT = 0, ft = 16, frames = 0;
+
+setSlot(slots[0], 'name');
+if (document.fonts && document.fonts.load) {
+  Promise.all([document.fonts.load('500 200px "Bodoni Moda"'), document.fonts.ready]).then(() => {
+    slots.forEach(sl => { if (sl.key && sl.kind === 'text') upload(sl.tex, sources[sl.key]()); });
+  });
+}
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) { last = now; return; }
+  const dt = Math.min(.05, (now - last) / 1000);
+  last = now;
+  simT += dt * (reduce ? .15 : 1);
+
+  ft = ft * .92 + dt * 1000 * .08;
+  if (++frames % 40 === 0) {
+    if (ft > 26 && scale > .3) { scale *= .86; resize(); }
+    else if (ft < 13 && scale < (coarse ? .6 : .85)) { scale *= 1.07; resize(); }
+  }
+
+  if (mode === 'diving' && now >= diveStart) {
+    const dur = diveDir > 0 ? 2100 : 1700;
+    const p = Math.min(1, (now - diveStart) / (reduce ? 300 : dur));
+    S.dive = diveDir > 0 ? diveFrom + (1 - diveFrom) * easeIn(p) : diveFrom * (1 - easeOut(p));
+    if (p >= 1) {
+      if (diveDir > 0) { mode = 'inside'; body.classList.remove('diving'); body.classList.add('inside'); proj.classList.add('on'); proj.setAttribute('aria-hidden', 'false'); $('#p-back').focus({ preventScroll: true }); }
+      else { mode = 'orbit'; body.classList.remove('diving'); showBackdrop('name'); }
+    }
+  }
+
+  const k = ease(2.2, dt);
+  smx += (mx - smx) * ease(2.5, dt); smy += (my - smy) * ease(2.5, dt);
+  S.dist += (S.distT - S.dist) * ease(S.dist > 30 ? .9 : 2, dt);
+  S.aim += (S.aimT - S.aim) * ease(1.6, dt);
+  S.disk += (S.diskT - S.disk) * k;
+  S.exp += (S.expT - S.exp) * ease(.8, dt);
+  S.mix += (S.mixT - S.mix) * ease(3.2, dt);
+  settleMix();
+  if (!reduce) S.az += dt * .022;
+
+  const aspect = innerWidth / innerHeight;
+  const portraitView = aspect < .9;
+  const baseFov = portraitView ? 74 : 50;
+  const fov = baseFov + S.dive * 32;
+  const tanH = Math.tan(fov * Math.PI / 360);
+  const dist = S.dist * (1 - S.dive) + .45 * S.dive;
+  const az = S.az + S.azDrag + smx * .22;
+  const el = Math.max(.03, .1 - smy * .055 - S.dive * .05);
+  const cam = [dist * Math.cos(el) * Math.cos(az), dist * Math.sin(el), dist * Math.cos(el) * Math.sin(az)];
+  let fwd = norm([-cam[0], -cam[1], -cam[2]]);
+  let right = norm(cross(fwd, [0, 1, 0]));
+  const aimX = (portraitView ? .3 : .38) * S.aim;
+  const vAim = portraitView ? .38 : 0;
+  const target = add(add([0, 0, 0], right, dist * aimX * tanH * aspect), cross(right, fwd), -dist * (.08 * S.aim + vAim) * tanH);
+  fwd = norm([target[0] - cam[0], target[1] - cam[1], target[2] - cam[2]]);
+  right = norm(cross(fwd, [0, 1, 0]));
+  const up = cross(right, fwd);
+
+  const planeL = dist + 16;
+  const halfH = tanH * planeL, halfW = halfH * aspect;
+  const half = sl => {
+    if (sl.kind === 'portrait') { const h = halfH * (portraitView ? .5 : .66); return [h * .8, h]; }
+    const w = halfW * (portraitView ? .98 : .62); return [w, w / 2];
+  };
+  const shiftX = S.aim * halfW * (portraitView ? 0 : .02);
+
+  gl.uniform2f(U.uRes, W, H);
+  gl.uniform1f(U.uTime, simT);
+  gl.uniform1f(U.uSpin, 1);
+  gl.uniform1f(U.uTanFov, tanH);
+  gl.uniform1f(U.uPlaneL, planeL);
+  gl.uniform1f(U.uMix, S.mix);
+  gl.uniform1f(U.uDisk, S.disk * (1 + S.dive * 1.5));
+  gl.uniform1f(U.uExp, S.exp * 1.05);
+  gl.uniform1f(U.uDop, .85);
+  gl.uniform1f(U.uTextGain, .8);
+  gl.uniform3fv(U.uCam, cam);
+  gl.uniform3fv(U.uFwd, fwd);
+  gl.uniform3fv(U.uRight, right);
+  gl.uniform3fv(U.uUp, up);
+  gl.uniform2fv(U.uHalfA, half(slots[0]));
+  gl.uniform2fv(U.uHalfB, half(slots[1]));
+  gl.uniform2f(U.uShift, shiftX, vAim * halfH);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, slots[0].tex);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, slots[1].tex);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  if (now - lastUi > 100) {
+    lastUi = now;
+    const secs = (now - t0) / 1000;
+    const s = Math.floor(secs);
+    tHere.textContent = pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60);
+    let e = secs * 61362;
+    const y = Math.floor(e / 31557600); e -= y * 31557600;
+    const mo = Math.floor(e / 2629800); e -= mo * 2629800;
+    const d = Math.floor(e / 86400); e -= d * 86400;
+    const h = Math.floor(e / 3600);
+    tEarth.textContent = (y ? y + ' y ' : '') + (y || mo ? mo + ' mo ' : '') + d + ' d ' + pad(h) + ' h';
+    tele.textContent = 'r ' + dist.toFixed(1) + ' Rs · i ' + (90 - el * 180 / Math.PI).toFixed(1) + '°';
+  }
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

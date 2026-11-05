@@ -1,0 +1,166 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { site } from '../../data/site';
+import { longDate } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('research', ({ data }) => !data.draft && !data.url);
+  return posts.map((post) => ({ params: { id: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Base title={post.data.title} description={post.data.summary}>
+  <main>
+    <nav class="back in" style="--i:0"><a href="/">← {site.name}</a></nav>
+    <header class="in" style="--i:1">
+      <p class="eyebrow">AI Research · <time datetime={post.data.date.toISOString()}>{longDate(post.data.date)}</time></p>
+      <h1>{post.data.title}</h1>
+      <p class="summary">{post.data.summary}</p>
+    </header>
+    <article class="prose in" style="--i:2">
+      <Content />
+    </article>
+    <footer class="in" style="--i:3">
+      <a href="/#research">More research</a>
+      <a href="/#work">Work with me</a>
+    </footer>
+  </main>
+</Base>
+
+<style>
+  .back {
+    margin-bottom: 48px;
+    font-size: 14px;
+  }
+  .back a {
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .back a:hover {
+    color: var(--text);
+  }
+  .eyebrow {
+    margin: 0;
+    font: 12.5px/1.4 var(--mono);
+    color: var(--faint);
+  }
+  h1 {
+    margin: 10px 0 8px;
+    font-size: clamp(26px, 5vw, 32px);
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  .summary {
+    margin: 0 0 40px;
+    color: var(--muted);
+    font-size: 16px;
+  }
+  .prose {
+    font-size: 16px;
+    line-height: 1.75;
+  }
+  .prose :global(p) {
+    margin: 0 0 1.1em;
+  }
+  .prose :global(h2) {
+    display: block;
+    margin: 2.2em 0 0.6em;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .prose :global(h3) {
+    margin: 1.8em 0 0.5em;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .prose :global(a) {
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+  }
+  .prose :global(a:hover) {
+    text-decoration-color: var(--text);
+  }
+  .prose :global(em) {
+    color: var(--muted);
+  }
+  .prose :global(ul),
+  .prose :global(ol) {
+    padding-left: 1.2em;
+    margin: 0 0 1.1em;
+  }
+  .prose :global(li) {
+    margin: 0.3em 0;
+  }
+  .prose :global(blockquote) {
+    margin: 1.4em 0;
+    padding-left: 16px;
+    border-left: 2px solid var(--line);
+    color: var(--muted);
+  }
+  .prose :global(code) {
+    font: 13.5px var(--mono);
+    background: var(--hover);
+    padding: 1px 5px;
+    border-radius: 5px;
+  }
+  .prose :global(pre) {
+    margin: 1.4em 0;
+    padding: 16px 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    font: 13px/1.7 var(--mono);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .prose :global(pre code) {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+  .prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.4em 0;
+    font-size: 14.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .prose :global(th),
+  .prose :global(td) {
+    text-align: left;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .prose :global(th) {
+    font-weight: 500;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .prose :global(img) {
+    max-width: 100%;
+    border-radius: 10px;
+  }
+  footer {
+    display: flex;
+    gap: 20px;
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+  }
+  footer a {
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  footer a:hover {
+    color: var(--text);
+  }
+</style>

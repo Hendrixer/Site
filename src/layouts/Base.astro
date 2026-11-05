@@ -1,0 +1,54 @@
+---
+import '../styles/global.css';
+import { site } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description = site.description } = Astro.props;
+const pageTitle = title ? `${title} · ${site.name}` : site.name;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0e0f" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+  </head>
+  <body>
+    <slot />
+    <div class="toast" id="toast" role="status"></div>
+    <script>
+      const toast = document.getElementById('toast');
+      let timer = 0;
+      document.querySelectorAll<HTMLButtonElement>('.copy[data-email]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const email = button.dataset.email ?? '';
+          try {
+            await navigator.clipboard.writeText(email);
+            if (toast) toast.textContent = `Copied ${email}`;
+          } catch {
+            if (toast) toast.textContent = email;
+          }
+          toast?.classList.add('on');
+          clearTimeout(timer);
+          timer = window.setTimeout(() => toast?.classList.remove('on'), 1800);
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personal Site Concepts II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..600;1,6..96,400..600&family=Hanken+Grotesk:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: a film's chapter list. Three numbered reels, each opening a full-screen prototype. */
+  --void:#050506;
+  --star:#EDE7DA;
+  --dim:#9A948A;
+  --faint:#5E5A53;
+  --gold:#E9B872;
+  --line:rgba(237,231,218,.13);
+  --display:"Bodoni Moda",Didot,"Bodoni 72",serif;
+  --ui:"Hanken Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --g:clamp(16px,4vw,48px);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--void);color:var(--star);font:400 16px/1.55 var(--ui);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:1px solid var(--gold);outline-offset:6px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 var(--g)}
+header{padding:clamp(48px,9vw,120px) 0 clamp(40px,6vw,72px);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:32px;align-items:end;border-bottom:1px solid var(--line)}
+.lab{font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+h1{font:400 clamp(46px,7.4vw,112px)/.92 var(--display);letter-spacing:-.025em;margin:22px 0 0;text-wrap:balance}
+h1 em{font-style:italic;color:var(--gold)}
+.note{color:var(--dim);font-size:15.5px;margin:0}
+ol{list-style:none;margin:0;padding:0}
+.reel{display:grid;grid-template-columns:90px minmax(0,1.2fr) minmax(0,1fr) 120px;gap:28px;align-items:baseline;padding:clamp(28px,4vw,44px) 0;border-bottom:1px solid var(--line);transition:background-color .4s}
+.reel:hover{background:rgba(237,231,218,.025)}
+.num{font:500 12px/1 var(--mono);color:var(--faint);font-variant-numeric:tabular-nums;padding-top:12px}
+.reel h2{font:italic 400 clamp(40px,5.4vw,76px)/1 var(--display);letter-spacing:-.02em;margin:0;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+.reel:hover h2{transform:translateX(10px)}
+.src{font:500 11px/1.6 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-top:14px}
+.desc{color:var(--dim);font-size:15.5px;margin:0;max-width:44ch}
+.desc b{display:block;font:italic 400 21px/1.35 var(--display);color:var(--star);margin-bottom:10px}
+.open{justify-self:end;font:500 11.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--star);border-bottom:1px solid var(--gold);padding-bottom:5px;white-space:nowrap}
+.reel:hover .open{color:var(--gold)}
+footer{padding:36px 0 64px;display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-between;font:12px/1.6 var(--mono);color:var(--faint)}
+@media (max-width:860px){
+  header{grid-template-columns:1fr}
+  .reel{grid-template-columns:44px minmax(0,1fr);gap:14px 16px}
+  .reel .desc,.reel .open{grid-column:2}
+  .open{justify-self:start;margin-top:6px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="lab">Personal site · round two · Nov 2026</div>
+      <h1>Three sites you <em>step into</em>, not scroll past.</h1>
+    </div>
+    <p class="note">Each one is a working prototype that opens full screen. Use a laptop for the first look. Projects and numbers are placeholders, and you can drop your own photo into any of them.</p>
+  </header>
+
+  <ol>
+    <li>
+      <a class="reel" href="gargantua.html">
+        <span class="num">01</span>
+        <div>
+          <h2>Gargantua</h2>
+          <div class="src">Cinema · Interstellar, Kip Thorne’s physics</div>
+        </div>
+        <p class="desc"><b>Your name, bent by a black hole.</b>A black hole ray-traced in real time, lensing the type behind it. Hover a project and gravity bends its name instead. Click and you fall through the event horizon into the project. A clock counts Earth years by Miller’s planet time.</p>
+        <span class="open">Enter</span>
+      </a>
+    </li>
+    <li>
+      <a class="reel" href="tesseract.html">
+        <span class="num">02</span>
+        <div>
+          <h2>Tesseract</h2>
+          <div class="src">Book culture · Murph’s bookshelf</div>
+        </div>
+        <p class="desc"><b>Your work as an endless library behind the shelf.</b>An infinite lattice of shelves seen from behind. Every project is a book, and every shelf is a year. Scroll to move through time. Pull a book out and it opens into a printed spread. Your portrait sits on the About the Author page, and every so often the dust falls in Morse code.</p>
+        <span class="open">Enter</span>
+      </a>
+    </li>
+    <li>
+      <a class="reel" href="monolith.html">
+        <span class="num">03</span>
+        <div>
+          <h2>Monolith</h2>
+          <div class="src">Architecture · Tadao Ando, TARS</div>
+        </div>
+        <p class="desc"><b>Four slabs in raking light.</b>The restrained one. Concrete monoliths that pivot and walk like TARS to reveal each section. Your portrait is carved into the stone as a relief that appears as the light moves. Honesty and humor dials rewrite your bio.</p>
+        <span class="open">Enter</span>
+      </a>
+    </li>
+  </ol>
+
+  <footer>
+    <span>Built as prototypes, so expect rough edges.</span>
+    <span>Your photo stays in your browser and is never uploaded.</span>
+  </footer>
+</div>
+</body>
+</html>

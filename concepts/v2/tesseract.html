@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tesseract</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: full-bleed WebGL lattice of backlit shelves; UI pinned to the four corners; reading happens in a printed-book overlay */
+  --void:#050403;
+  --ui:#D8CCB4;
+  --ui-2:#8C8170;
+  --amber:#E9B06A;
+  --paper:#EEE7D8;
+  --paper-ink:#2A231B;
+  --paper-2:#6E604C;
+  --rubric:#8A3B26;
+  --rule:#D2C4AA;
+  --display:"Cormorant Garamond","EB Garamond",Georgia,serif;
+  --book:"EB Garamond",Georgia,"Times New Roman",serif;
+  --sans:"Geist",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --pad:max(22px,env(safe-area-inset-left));
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--void);color:var(--ui);overflow:hidden}
+body{font:400 14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+:focus-visible{outline:1px solid var(--amber);outline-offset:4px}
+
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;opacity:0;transition:opacity 2.4s ease}
+body.ready #gl{opacity:1}
+.vignette{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse 75% 70% at 50% 46%,rgba(0,0,0,0) 40%,rgba(0,0,0,.72) 100%)}
+.grain{position:fixed;inset:-50%;pointer-events:none;z-index:2;opacity:.08;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");animation:grain 1.1s steps(5) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+
+.corner{position:fixed;z-index:5;display:flex;flex-direction:column;gap:6px;opacity:0;transition:opacity 1.6s ease .8s}
+body.ready .corner,body.nogl .corner{opacity:1}
+.tl{top:max(22px,env(safe-area-inset-top));left:var(--pad)}
+.tr{top:max(18px,env(safe-area-inset-top));right:max(22px,env(safe-area-inset-right));flex-direction:row;align-items:center;gap:8px}
+.bl{bottom:max(22px,env(safe-area-inset-bottom));left:var(--pad)}
+.br{bottom:max(24px,env(safe-area-inset-bottom));right:max(22px,env(safe-area-inset-right));text-align:right;align-items:flex-end}
+.name{font:500 25px/1 var(--display);letter-spacing:.01em;color:#EFE5D1}
+.role{font:400 10.5px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ui-2)}
+.navbtn{appearance:none;background:none;border:0;font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:8px 2px;color:var(--ui);transition:color .2s}
+.navbtn:hover{color:#FFF4DE}
+.dot{color:var(--ui-2)}
+.yr-l{font:400 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ui-2)}
+.yr{font:500 48px/1 var(--display);color:#EFE5D1;letter-spacing:.02em;font-variant-numeric:lining-nums;transition:opacity .3s ease,transform .3s ease}
+.yr.swap{opacity:0;transform:translateY(8px)}
+.ticks{display:flex;gap:5px;margin-top:4px}
+.ticks i{width:14px;height:2px;background:rgba(216,204,180,.18);transition:background-color .3s}
+.ticks i.on{background:var(--amber)}
+.hint{font:400 10.5px/1.6 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ui)}
+.hint span{display:block;color:var(--ui-2)}
+.small{position:fixed;z-index:5;bottom:max(26px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font:400 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#5D5446;white-space:nowrap}
+
+#tip{position:fixed;z-index:6;left:0;top:0;pointer-events:none;font:400 10.5px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#CDBFA6;background:rgba(10,8,6,.78);border:1px solid rgba(233,176,106,.22);padding:8px 11px 9px;border-radius:2px;opacity:0;transition:opacity .2s;white-space:nowrap}
+#tip b{display:block;font:500 18px/1.15 var(--display);text-transform:none;letter-spacing:0;color:#F3E9D5;margin-bottom:3px}
+
+#toast{position:fixed;z-index:40;left:50%;bottom:max(70px,env(safe-area-inset-bottom));transform:translate(-50%,10px);font:400 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#F3E9D5;background:rgba(14,11,8,.92);border:1px solid rgba(233,176,106,.3);padding:10px 14px;border-radius:2px;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#drop{position:fixed;inset:14px;z-index:30;border:1px dashed rgba(233,176,106,.6);border-radius:4px;display:grid;place-items:center;background:rgba(5,4,3,.55);font:500 26px/1.2 var(--display);color:#F3E9D5;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:24px}
+#drop span{display:block;font:400 11px/1.6 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ui-2);margin-top:10px}
+body.dragging #drop{opacity:1}
+
+/* Reader: a printed book */
+#reader{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:clamp(16px,4vw,56px);background:rgba(4,3,2,.5);-webkit-backdrop-filter:blur(5px) brightness(.75);backdrop-filter:blur(5px) brightness(.75);overflow:auto;overscroll-behavior:contain}
+#reader.show{display:flex}
+#reader.closing{background:rgba(4,3,2,0);transition:background-color .38s}
+.spread{position:relative;display:grid;grid-template-columns:1fr 1fr;width:min(1140px,100%,calc((100vh - 96px) * 1.48));aspect-ratio:1.48;container-type:inline-size;filter:drop-shadow(0 50px 60px rgba(0,0,0,.65))}
+.page{position:relative;display:flex;flex-direction:column;background-color:var(--paper);color:var(--paper-ink);padding:5.6% 8.4% 4.6%;font:400 clamp(12.5px,1.52cqi,17.5px)/1.48 var(--book);overflow:hidden;font-variant-numeric:oldstyle-nums;font-feature-settings:"liga","kern"}
+.page::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;mix-blend-mode:multiply;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .45  0 0 0 0 .3  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>")}
+.verso{transform-origin:right center;border-radius:3px 0 0 3px;background-image:linear-gradient(to left,rgba(70,45,20,.26),rgba(70,45,20,.06) 5%,rgba(70,45,20,0) 11%)}
+.recto{transform-origin:left center;border-radius:0 3px 3px 0;background-image:linear-gradient(to right,rgba(70,45,20,.3),rgba(70,45,20,.07) 5%,rgba(70,45,20,0) 11%)}
+#reader.show .verso{animation:leafL .95s cubic-bezier(.2,.78,.16,1) both}
+#reader.show .recto{animation:leafR .95s cubic-bezier(.2,.78,.16,1) both}
+#reader.closing .verso{animation:leafLc .38s cubic-bezier(.5,0,.75,0) both}
+#reader.closing .recto{animation:leafRc .38s cubic-bezier(.5,0,.75,0) both}
+@keyframes leafL{from{transform:perspective(2600px) rotateY(86deg);filter:brightness(.35)}to{transform:none;filter:none}}
+@keyframes leafR{from{transform:perspective(2600px) rotateY(-86deg);filter:brightness(.35)}to{transform:none;filter:none}}
+@keyframes leafLc{to{transform:perspective(2600px) rotateY(86deg);filter:brightness(.35)}}
+@keyframes leafRc{to{transform:perspective(2600px) rotateY(-86deg);filter:brightness(.35)}}
+.rh{position:relative;text-align:center;font:500 .7em/1 var(--book);letter-spacing:.24em;text-transform:uppercase;color:var(--paper-2);margin-bottom:8%}
+.pg{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
+.folio{position:relative;text-align:center;font:400 .82em/1 var(--book);color:var(--paper-2);padding-top:1em}
+.ch{font:500 .7em/1 var(--book);letter-spacing:.24em;text-transform:uppercase;color:var(--rubric);margin:2% 0 1.3em}
+.page h2{font:500 3.15em/.98 var(--display);letter-spacing:-.008em;margin:0 0 .32em;text-wrap:balance;color:#1D1813}
+.dek{font-style:italic;color:var(--paper-2);margin:0 0 .4em;font-size:1.1em;line-height:1.35;text-wrap:pretty}
+.orn{text-align:center;color:var(--rubric);font-size:1.2em;letter-spacing:.3em;margin:.7em 0 1em}
+.page p{margin:0;text-align:justify;-webkit-hyphens:auto;hyphens:auto}
+.page p+p{text-indent:1.5em}
+.first::first-letter{float:left;font:500 3.55em/.8 var(--display);margin:.07em .09em 0 0;color:var(--rubric)}
+.colophon{margin-top:1.4em;padding-top:1em;border-top:1px solid var(--rule)}
+.cl-h{text-align:center;font:500 .68em/1 var(--book);letter-spacing:.26em;text-transform:uppercase;color:var(--paper-2);margin-bottom:.95em}
+.colophon dl{margin:0;display:grid;gap:.22em}
+.colophon dl div{display:grid;grid-template-columns:40% 1fr;gap:1em}
+.colophon dt{font-variant:small-caps;text-transform:lowercase;letter-spacing:.06em;color:var(--paper-2)}
+.colophon dd{margin:0}
+.seealso{margin-top:1.1em!important;text-indent:0!important;text-align:left!important}
+.sc{font-variant:small-caps;text-transform:lowercase;letter-spacing:.07em;color:var(--paper-2);margin-right:.35em}
+.fn{margin-top:auto!important;padding-top:.6em;width:46%;border-top:1px solid var(--rule);font-size:.76em;line-height:1.4;color:var(--paper-2);text-indent:0!important;text-align:left!important}
+.fn sup{font-size:.8em;margin-right:.2em}
+.x{position:fixed;z-index:22;top:max(16px,env(safe-area-inset-top));right:max(16px,env(safe-area-inset-right));appearance:none;background:rgba(10,8,6,.6);border:1px solid rgba(216,204,180,.28);border-radius:2px;color:var(--ui);font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:10px 13px;cursor:pointer;display:none}
+#reader.show .x{display:block}
+.x kbd{font:inherit;color:var(--ui-2);margin-left:6px}
+
+.flap{margin:.2em 0 0;display:flex;flex-direction:column;align-items:center;gap:.8em}
+.flap .frame{width:60%;padding:4%;background:#E4DBC8;box-shadow:inset 0 0 0 1px var(--rule)}
+.flap img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;filter:sepia(.12) contrast(1.03)}
+.flap figcaption{font-style:italic;font-size:.82em;color:var(--paper-2);text-align:center;max-width:80%}
+.also{list-style:none;margin:.2em 0 0;padding:0;columns:2;column-gap:1.6em;font-size:.94em}
+.also li{break-inside:avoid;margin-bottom:.22em;line-height:1.3}
+.linkish{appearance:none;background:none;border:0;padding:0;cursor:pointer;font:italic 400 1em/1.3 var(--book);color:var(--paper-ink);text-align:left;text-decoration:underline;text-decoration-color:rgba(138,59,38,.35);text-underline-offset:.18em}
+.linkish:hover{text-decoration-color:var(--rubric);color:var(--rubric)}
+.also .yr-s{color:var(--paper-2);font-size:.9em}
+.subh{text-align:center;font:500 .68em/1 var(--book);letter-spacing:.26em;text-transform:uppercase;color:var(--paper-2);margin:1.5em 0 .9em}
+.upl{display:flex;flex-wrap:wrap;align-items:center;gap:.4em .8em;margin-top:1.2em;font-size:.86em;color:var(--paper-2)}
+.upl label{display:inline-block;cursor:pointer;font:500 .78em/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--paper-ink);border:1px solid rgba(42,35,27,.35);padding:.7em .9em;border-radius:2px;background:rgba(255,255,255,.25)}
+.upl label:hover{background:rgba(255,255,255,.55)}
+.upl input{position:absolute;opacity:0;width:1px;height:1px}
+.upl input:focus-visible+span{outline:1px solid var(--rubric);outline-offset:3px}
+
+.ix{list-style:none;margin:0;padding:0;font-size:.95em;line-height:1.38}
+.ix .L{font:500 1.1em/1 var(--display);color:var(--rubric);margin:.75em 0 .3em}
+.ix .L:first-child{margin-top:0}
+.ix li{padding-left:1.2em;text-indent:-1.2em}
+.ix .pp{color:var(--paper-2)}
+.ixh{font:500 3.15em/.98 var(--display);margin:2% 0 .5em;color:#1D1813}
+
+#fallback{display:none;position:fixed;inset:0;z-index:4;overflow:auto;padding:110px var(--pad) 120px}
+body.nogl #fallback{display:block}
+body.nogl #gl{display:none}
+.fb{max-width:560px;margin:0 auto;text-align:center}
+.fb h1{font:500 clamp(40px,7vw,64px)/1 var(--display);color:#F3E9D5;margin:0 0 .3em}
+.fb p{color:var(--ui-2);font:400 11px/1.6 var(--mono);letter-spacing:.12em;text-transform:uppercase;margin:0 0 40px}
+.fb ol{list-style:none;margin:0;padding:0;border-top:1px solid rgba(216,204,180,.14)}
+.fb li{border-bottom:1px solid rgba(216,204,180,.14)}
+.fb button{appearance:none;background:none;border:0;width:100%;display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:14px 4px;cursor:pointer;text-align:left}
+.fb button b{font:500 22px/1.2 var(--display);color:#F3E9D5}
+.fb button span{font:400 11px var(--mono);letter-spacing:.1em;color:var(--ui-2);flex:none}
+
+@media (max-width:760px){
+  #reader{align-items:flex-start;padding:64px 12px 28px}
+  .spread{grid-template-columns:1fr;width:100%;aspect-ratio:auto;gap:3px}
+  .page{font-size:15.5px;padding:30px 24px 22px;min-height:0;overflow:visible}
+  .verso,.recto{border-radius:3px;transform-origin:center top}
+  .verso{background-image:linear-gradient(to top,rgba(70,45,20,.18),rgba(70,45,20,0) 6%)}
+  .recto{background-image:linear-gradient(to bottom,rgba(70,45,20,.2),rgba(70,45,20,0) 6%)}
+  @keyframes leafL{from{transform:perspective(1600px) rotateX(-70deg);opacity:0}to{transform:none;opacity:1}}
+  @keyframes leafR{from{transform:perspective(1600px) rotateX(-70deg);opacity:0}to{transform:none;opacity:1}}
+  .fn{width:70%;margin-top:1.4em!important}
+  .rh{margin-bottom:1.6em}
+  .small{display:none}
+  .name{font-size:22px}
+  .yr{font-size:38px}
+  .also{columns:1}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
+  .grain{display:none}
+}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="gl" aria-label="A lattice of bookshelves receding in every direction. Each book is a project."></canvas>
+<div class="vignette" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="corner tl"><div class="name">Scott Moss</div><div class="role">Collected works, 2019 to now</div></div>
+<nav class="corner tr" aria-label="Site"><button class="navbtn" type="button" id="nav-index">Index</button><span class="dot" aria-hidden="true">·</span><button class="navbtn" type="button" id="nav-about">About</button></nav>
+<div class="corner bl" aria-live="polite"><div class="yr-l">Shelf</div><div class="yr" id="yr">2026</div><div class="ticks" id="ticks"></div></div>
+<div class="corner br"><div class="hint" id="hint">Scroll to move through time<span>Select a spine to open it</span></div></div>
+<div class="small">Placeholder projects and figures</div>
+
+<div id="tip" aria-hidden="true"></div>
+<div id="toast" role="status"></div>
+<div id="drop" aria-hidden="true"><div>Drop a photo for the author portrait<span>It stays in this browser</span></div></div>
+
+<section id="fallback" aria-label="Contents">
+  <div class="fb">
+    <h1>Collected works</h1>
+    <p>This browser can’t draw the 3D shelves, so here are the contents.</p>
+    <ol id="fb-list"></ol>
+  </div>
+</section>
+
+<div id="reader" role="dialog" aria-modal="true" aria-label="Book">
+  <button class="x" id="rx" type="button">Close<kbd>Esc</kbd></button>
+  <div class="spread" id="sheet"></div>
+</div>
+
+<script>
+/* Content, reader, portrait and UI. Runs before the 3D module so the page still works without WebGL. */
+window.TS = (() => {
+  const $ = s => document.querySelector(s);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const P = [
+    { id:'firstcli', year:2019, title:'Build a CLI in Node', kind:'Video', cloth:'#6E5A3C',
+      dek:'The first video. Twenty-four minutes, one take, a lot of nerves.',
+      body:['I recorded this one in a closet with a borrowed microphone. The plan was a ten-minute walkthrough of a small command-line tool. It ran to twenty-four minutes, because every shortcut I skipped would have turned into a question in the comments.',
+            'It taught me the rule I still follow: show the whole path, wrong turns included. People don’t need a polished answer. They need to watch someone get there.'],
+      facts:[['Runtime','24:10'],['Views','22,000'],['Recorded','In a closet']], links:['Watch on YouTube'] },
+    { id:'graphql', year:2020, title:'Production GraphQL', kind:'Course', cloth:'#28364A',
+      dek:'Six hours on building GraphQL APIs that survive real traffic.',
+      body:['Most GraphQL tutorials stop at the schema. This course starts there and keeps going: batching, caching, auth, and what to do when a single query asks for the whole database.',
+            'I rewrote the final module three times. The version that shipped is the one where every example came from a real incident.'],
+      facts:[['Length','6 hours'],['Students','14,500'],['Modules','11']], links:['Course page'] },
+    { id:'tinystore', year:2021, title:'tiny-store', kind:'Open source', cloth:'#4A3F5C',
+      dek:'State management in under a kilobyte.',
+      body:['A weekend experiment that asked how much of a state library you actually need. The answer turned out to be about forty lines and one good idea about subscriptions.',
+            'It never tried to be popular. It ended up in more production apps than I expected, mostly because it was small enough to read in one sitting.'],
+      facts:[['License','MIT'],['Stars','2,860'],['Size','0.9 kB gzipped']], links:['Source on GitHub'] },
+    { id:'apitalk', year:2022, title:'The Shape of a Good API', kind:'Conference talk', cloth:'#5B4A3A',
+      dek:'A keynote about designing interfaces that other people have to live with.',
+      body:['An API is a product whose users are programmers, and they forgive even less than everyone else. The talk walks through five interfaces I designed, what each one got wrong, and the one habit that would have caught it.',
+            'The slides are mostly blank. The point was to make the audience imagine using the thing before anyone wrote it.'],
+      facts:[['Format','Keynote, 40 minutes'],['Audience','1,400'],['Slides','62']], links:['Slides','Recording'] },
+    { id:'aicourse', year:2023, title:'AI for Developers', kind:'Course', cloth:'#3D4A4C',
+      dek:'Fourteen modules on building with language models, before the tooling settled.',
+      body:['Recorded in the months when every week brought a new model and a new framework. I left out anything I expected to be obsolete by spring and kept the parts that would still hold: prompts as programs, evaluation, and knowing when not to use a model at all.',
+            'Most of it still holds. The chapter on evaluation is the one people write to me about.'],
+      facts:[['Length','9 hours'],['Students','21,000'],['Modules','14']], links:['Course page'] },
+    { id:'agentkit', year:2024, title:'agent-kit', kind:'Open source', cloth:'#C8BC9F',
+      dek:'Small primitives for tool-using agents.',
+      body:['Every agent framework I tried wanted to own the whole loop. agent-kit goes the other way: plan, call, observe and retry as plain functions you can compose, test and throw away.',
+            'It is deliberately boring. The best issue anyone filed said they replaced three hundred lines with eleven.'],
+      facts:[['License','MIT'],['Stars','4,212'],['Weekly installs','38,000']], links:['Source on GitHub','Docs'] },
+    { id:'margin', year:2025, title:'Margin', kind:'Web app', cloth:'#2E3B33',
+      dek:'A script editor built for YouTube.',
+      body:['Scripts for video aren’t documents. They’re timing, b-roll and the things you’ll cut on the third take. Margin keeps all of that in the margin, next to the words, where it belongs.',
+            'It started as a tool for my own channel. Two thousand writers later, the margin notes are still the feature everyone mentions first.'],
+      facts:[['Status','Public beta'],['Writers','2,130'],['Started','February 2025']], links:['Open Margin'] },
+    { id:'weekend', year:2025, title:'I Rebuilt My Editor in a Weekend', kind:'Video', cloth:'#7D6237',
+      dek:'Forty-eight hours, four thousand deleted lines, and nothing broke.',
+      body:['On Friday night I deleted the plugin system from my own editor. By Sunday it was faster, smaller and, somehow, more capable. The video is the whole weekend in four chapters, mistakes left in.',
+            'The lesson isn’t about editors. It’s about how much of what we build exists only to support other things we built.'],
+      facts:[['Runtime','18:42'],['Views','148,000'],['Chapters','4']], links:['Watch on YouTube'] },
+    { id:'lull', year:2026, title:'Lull', kind:'iOS app', cloth:'#6B2E24',
+      dek:'A focus timer that learns your rhythm.',
+      body:['Lull started with one question: why do focus timers feel like more work? Paper prototypes with eight people kept pointing to one ring and one button.',
+            'The beta shipped every feature anyone asked for, and retention fell. Version one cut it back to the ring. The only thing added since is the part that watches when you actually focus and suggests the next session.'],
+      facts:[['Shipped','March 2026'],['Platform','iOS'],['Users','12,408'],['Rating','4.8']], links:['App Store','Case study'] },
+    { id:'memory', year:2026, title:'Do Agents Need Memory?', kind:'Research note', cloth:'#2B3441',
+      dek:'Forty tasks, three memory setups, and one result I didn’t expect.',
+      body:['I ran the same forty multi-step tasks against an agent with no memory, a scratchpad, and retrieval over its own past runs. Retrieval scored highest, at 72 percent.',
+            'The surprise was the scratchpad. It captured 71 percent of retrieval’s gain for a tenth of the tokens, which changes what I’d build first.'],
+      facts:[['Published','March 2026'],['Method','40 tasks, 3 setups'],['Finding','Scratchpad kept 71% of the gain']], links:['Read the note','Data'] }
+  ];
+  const ABOUT = { id:'about', year:2026, title:'About the Author', kind:'Biography', cloth:'#3A1D19' };
+  const roman = n => { const t=[[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']]; let s=''; for(const [v,r] of t) while(n>=v){s+=r;n-=v} return s; };
+  let folio = 12;
+  P.forEach((p,i) => { p.n = i+1; p.folio = folio; p.span = 8 + (p.title.length % 5) * 2; folio += p.span; });
+  const byId = Object.fromEntries(P.map(p => [p.id, p])); byId.about = ABOUT;
+
+  /* Placeholder portrait: head and shoulders, backlit with a warm rim, like an author photo shot against a window. */
+  const portraitCanvas = (() => {
+    const c = document.createElement('canvas'); c.width = 480; c.height = 600;
+    const g = c.getContext('2d');
+    let gr = g.createRadialGradient(330,170,10,300,250,520);
+    gr.addColorStop(0,'#6a4524'); gr.addColorStop(.42,'#22170e'); gr.addColorStop(1,'#080605');
+    g.fillStyle = gr; g.fillRect(0,0,480,600);
+    const s = new Path2D();
+    s.ellipse(238,232,74,95,-.04,0,Math.PI*2);
+    s.moveTo(204,300); s.lineTo(276,300); s.lineTo(286,404); s.lineTo(192,404); s.closePath();
+    s.moveTo(14,600); s.bezierCurveTo(26,486,108,438,198,398); s.lineTo(282,398); s.bezierCurveTo(372,436,452,486,468,600); s.closePath();
+    g.save(); g.filter = 'blur(5px)'; g.fillStyle = 'rgba(255,170,90,.55)'; g.fill(s); g.restore();
+    g.save(); g.filter = 'blur(1.2px)'; g.fillStyle = '#F2B46E'; g.fill(s); g.restore();
+    g.save(); g.translate(-8,5); g.fillStyle = '#0c0907'; g.fill(s); g.restore();
+    g.save(); g.clip(s); g.translate(-8,5);
+    gr = g.createRadialGradient(300,220,10,250,300,260); gr.addColorStop(0,'rgba(90,60,35,.35)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0,0,480,600); g.restore();
+    const im = g.getImageData(0,0,480,600), d = im.data;
+    for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 18; d[i] += n; d[i+1] += n; d[i+2] += n; }
+    g.putImageData(im,0,0);
+    gr = g.createRadialGradient(240,300,180,240,300,420); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(0,0,0,.55)');
+    g.fillStyle = gr; g.fillRect(0,0,480,600);
+    return c;
+  })();
+  let portrait = { src: portraitCanvas.toDataURL('image/jpeg', .9), source: portraitCanvas, custom: false };
+
+  const reader = $('#reader'), sheet = $('#sheet'), xBtn = $('#rx');
+  let openId = null, fromGL = false, closing = false, lastFocus = null;
+
+  const factsHTML = f => '<dl>' + f.map(([k,v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('') + '</dl>';
+  function spreadHTML(p) {
+    return `<article class="page verso"><div class="rh">Scott Moss</div><div class="pg">
+        <div class="ch">Chapter ${roman(p.n)} · ${p.year}</div>
+        <h2>${p.title}</h2><p class="dek">${p.dek}</p>
+        <div class="orn" aria-hidden="true">⁂</div>
+        <p class="first">${p.body[0]}</p></div>
+        <div class="folio">${p.folio}</div></article>
+      <article class="page recto"><div class="rh">${p.title}</div><div class="pg">
+        ${p.body.slice(1).map(t => `<p>${t}</p>`).join('')}
+        <div class="colophon"><div class="cl-h">Colophon</div>${factsHTML([['Form', p.kind]].concat(p.facts))}</div>
+        <p class="seealso"><span class="sc">See also</span>${p.links.join(' · ')}</p>
+        <p class="fn"><sup>†</sup>A placeholder chapter. Project, figures and links stand in for the real ones.</p></div>
+        <div class="folio">${p.folio + 1}</div></article>`;
+  }
+  function aboutHTML() {
+    const works = P.slice().reverse().map(p => `<li><button class="linkish" type="button" data-open="${p.id}">${p.title}</button> <span class="yr-s">${p.year}</span></li>`).join('');
+    return `<article class="page verso"><div class="rh">Scott Moss</div><div class="pg">
+        <div class="ch">About the author</div>
+        <figure class="flap"><div class="frame"><img class="portrait" src="${portrait.src}" alt="${portrait.custom ? 'Your photo, used as the author portrait' : 'Placeholder author portrait, a backlit silhouette'}"></div>
+        <figcaption>${portrait.custom ? 'Photograph: yours, kept in this browser.' : 'Photograph: placeholder. Drop your own photo anywhere on the page.'}</figcaption></figure></div>
+        <div class="folio">vii</div></article>
+      <article class="page recto"><div class="rh">About the Author</div><div class="pg">
+        <p>Scott Moss builds products and teaches the people who build them. He makes apps and open-source tools, writes about AI research, and explains most of it on YouTube, usually while it’s still half-finished.</p>
+        <p>He has taught tens of thousands of developers through courses and talks, and still believes the fastest way to understand something is to build it in front of other people. This shelf is the record so far.</p>
+        <div class="subh">Also by Scott Moss</div>
+        <ul class="also">${works}</ul>
+        <div class="upl"><label><input type="file" id="photo" accept="image/*"><span>Use your photo</span></label><span>Or drop one anywhere. It stays in this browser.</span></div>
+        <p class="fn"><sup>†</sup>Placeholder biography for this prototype.</p></div>
+        <div class="folio">viii</div></article>`;
+  }
+  function indexHTML() {
+    const arts = /^(The|A|An) (.+)$/;
+    const ents = P.map(p => { const m = p.title.match(arts); return { k: m ? m[2] : p.title, label: m ? `${m[2]}, ${m[1]}` : p.title, id: p.id, pages: `${p.folio}–${p.folio + p.span - 1}` }; })
+      .concat([
+        { k:'About the author', label:'About the author', id:'about', pages:'vii–viii', plain:true },
+        { k:'editor, rebuilt in a weekend', see:'I Rebuilt My Editor in a Weekend', id:'weekend' },
+        { k:'GraphQL, in production', see:'Production GraphQL', id:'graphql' },
+        { k:'memory, in agents', see:'Do Agents Need Memory?', id:'memory' },
+        { k:'state management', see:'tiny-store', id:'tinystore' },
+        { k:'timers, focus', see:'Lull', id:'lull' }
+      ]).sort((a,b) => a.k.localeCompare(b.k, 'en', { sensitivity:'base' }));
+    const li = e => e.see
+      ? `<li>${e.k}, <i>see</i> <button class="linkish" type="button" data-open="${e.id}">${e.see}</button></li>`
+      : `<li><button class="linkish" type="button" data-open="${e.id}" ${e.plain ? 'style="font-style:normal"' : ''}>${e.label}</button>, <span class="pp">${e.pages}</span></li>`;
+    const render = list => { let out = '', L = ''; list.forEach(e => { const f = e.k[0].toUpperCase(); if (f !== L) { L = f; out += `<li class="L" aria-hidden="true">${f}</li>`; } out += li(e); }); return out; };
+    const half = Math.ceil(ents.length / 2);
+    return `<article class="page verso"><div class="rh">Index</div><div class="pg">
+        <div class="ixh">Index</div><ul class="ix">${render(ents.slice(0, half))}</ul></div>
+        <div class="folio">301</div></article>
+      <article class="page recto"><div class="rh">Index</div><div class="pg">
+        <ul class="ix">${render(ents.slice(half))}</ul>
+        <p class="fn"><sup>†</sup>Page numbers refer to this edition. Every entry is a placeholder.</p></div>
+        <div class="folio">302</div></article>`;
+  }
+
+  function show(html, id, gl) {
+    lastFocus = document.activeElement;
+    sheet.innerHTML = html;
+    reader.classList.remove('closing');
+    reader.classList.add('show');
+    reader.scrollTop = 0;
+    openId = id; fromGL = !!gl;
+    reader.setAttribute('aria-label', id === 'index' ? 'Index' : (byId[id]?.title || 'Book'));
+    xBtn.focus({ preventScroll: true });
+    hideTip();
+  }
+  function openSpread(id, gl) {
+    if (id === 'index') return show(indexHTML(), 'index', false);
+    if (id === 'about') return show(aboutHTML(), 'about', gl);
+    const p = byId[id]; if (p) show(spreadHTML(p), id, gl);
+  }
+  function close(after) {
+    if (!openId || closing) return;
+    closing = true;
+    const id = openId, gl = fromGL;
+    reader.classList.add('closing');
+    setTimeout(() => {
+      reader.classList.remove('show', 'closing');
+      sheet.innerHTML = '';
+      openId = null; closing = false;
+      if (gl && TS.onClosed) TS.onClosed(id);
+      if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+      if (after) setTimeout(after, gl ? 760 : 40);
+    }, reduce ? 0 : 380);
+  }
+  function go(id) { if (TS.gl) TS.gl.goTo(id); else openSpread(id, false); }
+  function request(id) { if (openId) close(() => go(id)); else go(id); }
+
+  xBtn.addEventListener('click', () => close());
+  reader.addEventListener('click', e => {
+    const b = e.target.closest('[data-open]');
+    if (b) { request(b.dataset.open); return; }
+    if (e.target === reader) close();
+  });
+  reader.addEventListener('change', e => { if (e.target.id === 'photo' && e.target.files[0]) usePhoto(e.target.files[0]); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && openId) { e.preventDefault(); close(); } });
+  $('#nav-index').addEventListener('click', () => { if (openId === 'index') close(); else if (openId) close(() => openSpread('index')); else openSpread('index'); });
+  $('#nav-about').addEventListener('click', () => request('about'));
+
+  const toastEl = $('#toast'); let toastT = 0;
+  function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('on'), 3200); }
+  function usePhoto(f) {
+    if (!f.type.startsWith('image/')) { toast('That file isn’t an image. Try a JPG or PNG.'); return; }
+    const r = new FileReader();
+    r.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        portrait = { src: r.result, source: img, custom: true };
+        document.querySelectorAll('img.portrait').forEach(el => { el.src = r.result; el.alt = 'Your photo, used as the author portrait'; });
+        const cap = document.querySelector('.flap figcaption'); if (cap) cap.textContent = 'Photograph: yours, kept in this browser.';
+        if (TS.onPortrait) TS.onPortrait(img);
+        toast('Portrait updated. The photo stays in this browser.');
+      };
+      img.onerror = () => toast('That image couldn’t be read. Try another one.');
+      img.src = r.result;
+    };
+    r.readAsDataURL(f);
+  }
+  let dragDepth = 0;
+  const hasFiles = e => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+  addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
+  addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
+  addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) document.body.classList.remove('dragging'); });
+  addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging'); const f = [...e.dataTransfer.files][0]; if (f) usePhoto(f); });
+
+  const tip = $('#tip');
+  function showTip(p, x, y) {
+    tip.innerHTML = `<b>${p.title}</b>${p.kind} · ${p.year}`;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    let tx = x + 18, ty = y + 18;
+    if (tx + w > innerWidth - 12) tx = x - w - 18;
+    if (ty + h > innerHeight - 12) ty = y - h - 18;
+    tip.style.transform = `translate(${Math.max(8, tx)}px,${Math.max(8, ty)}px)`;
+    tip.style.opacity = 1;
+  }
+  function hideTip() { tip.style.opacity = 0; }
+
+  const yrEl = $('#yr'), ticks = $('#ticks');
+  ticks.innerHTML = Array.from({ length: 8 }, () => '<i></i>').join('');
+  function setYear(y, i) {
+    yrEl.classList.add('swap');
+    setTimeout(() => { yrEl.textContent = y; yrEl.classList.remove('swap'); }, reduce ? 0 : 160);
+    [...ticks.children].forEach((t, k) => t.classList.toggle('on', k === 7 - i));
+  }
+  setYear(2026, 0);
+  if (matchMedia('(pointer: coarse)').matches) $('#hint').innerHTML = 'Swipe to move through time<span>Tap a spine to open it</span>';
+
+  function fail() {
+    if (document.body.classList.contains('nogl')) return;
+    document.body.classList.add('nogl');
+    $('#hint').innerHTML = 'Contents<span>Choose a chapter to open it</span>';
+    $('#fb-list').innerHTML = P.slice().reverse().map(p => `<li><button type="button" data-fb="${p.id}"><b>${p.title}</b><span>${p.kind} · ${p.year}</span></button></li>`).join('')
+      + `<li><button type="button" data-fb="about"><b>About the Author</b><span>Biography</span></button></li>`;
+    $('#fb-list').addEventListener('click', e => { const b = e.target.closest('[data-fb]'); if (b) openSpread(b.dataset.fb, false); });
+  }
+  setTimeout(() => { if (!TS.gl) fail(); }, 10000);
+
+  return { P, ABOUT, byId, reduce, openSpread, close, request, showTip, hideTip, setYear, toast, fail,
+    portrait: () => portrait, isOpen: () => !!openId, gl: null, onClosed: null, onPortrait: null };
+})();
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const TS = window.TS;
+const reduce = TS.reduce;
+const canvas = document.getElementById('gl');
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+} catch (err) { TS.fail(); throw err; }
+
+const small = Math.min(innerWidth, innerHeight) < 600;
+const DPR = Math.min(window.devicePixelRatio || 1, 1.75);
+renderer.setPixelRatio(DPR);
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050403);
+scene.fog = new THREE.FogExp2(0x060403, 0.04);
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 140);
+
+/* ---------- Lattice dimensions ---------- */
+const CW = 7, CH = 3.4, BT = 0.15, BT0 = 0.26, DEPTH = 1.5;
+const LAYERS = small ? [0, -7, -14, -21] : [0, -7, -14, -21, -28];
+const XI = small ? [-3, 3] : [-5, 5];
+const ROWS = [-4, 11];
+const YEARS = 8, TOP_YEAR = 2026;
+const rowOf = year => TOP_YEAR - year;
+
+let seed = 20260311;
+const rand = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const layerOff = k => (k % 2 ? CW / 2 : 0);
+
+/* ---------- Shared textures ---------- */
+function canvasTex(w, h, draw, srgb = true) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+const glowTex = canvasTex(256, 256, (g, w, h) => {
+  const gr = g.createRadialGradient(128, 150, 6, 128, 140, 150);
+  gr.addColorStop(0, 'rgba(255,214,150,1)');
+  gr.addColorStop(.32, 'rgba(255,172,92,.55)');
+  gr.addColorStop(.72, 'rgba(190,100,40,.12)');
+  gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+const dotTex = canvasTex(64, 64, (g) => {
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.35, 'rgba(255,255,255,.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+});
+const fillerTex = canvasTex(64, 512, (g, w, h) => {
+  g.fillStyle = '#c2c0bc'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${rand() < .5 ? '255,255,255' : '0,0,0'},${.04 + rand() * .05})`; g.fillRect(rand() * w, rand() * h, 1 + rand() * 2, 1); }
+  const sh = g.createLinearGradient(0, 0, w, 0);
+  sh.addColorStop(0, 'rgba(0,0,0,.35)'); sh.addColorStop(.5, 'rgba(255,255,255,.08)'); sh.addColorStop(1, 'rgba(0,0,0,.38)');
+  g.fillStyle = sh; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#f3e6c4';
+  [.07, .085, .9, .915].forEach(f => g.fillRect(8, h * f, w - 16, 3));
+});
+
+/* ---------- Lights ---------- */
+scene.add(new THREE.HemisphereLight(0x3b2c1e, 0x070504, 1.1));
+const backLight = new THREE.DirectionalLight(0xffb36a, 2.2);
+backLight.position.set(3, 6, -12); scene.add(backLight);
+const camLight = new THREE.PointLight(0xffd6a6, 40, 30, 1.5);
+scene.add(camLight);
+
+/* ---------- Beams, posts and time strands ---------- */
+const m4 = new THREE.Matrix4(), qt = new THREE.Quaternion(), eu = new THREE.Euler(), vp = new THREE.Vector3(), vs = new THREE.Vector3();
+const box = new THREE.BoxGeometry(1, 1, 1);
+const woodMat = new THREE.MeshStandardMaterial({ color: 0x1b140f, roughness: .86, metalness: .04 });
+const beamM = [];
+const yTopBoard = -(ROWS[0] - 1) * CH, yBotBoard = -ROWS[1] * CH;
+const latW = (XI[1] - XI[0] + 3) * CW;
+LAYERS.forEach((z, k) => {
+  const off = layerOff(k);
+  for (let j = ROWS[0] - 1; j <= ROWS[1]; j++) {
+    const t = k === 0 ? BT0 : BT;
+    beamM.push([off, -j * CH, z, latW, t, DEPTH]);
+  }
+  for (let i = XI[0]; i <= XI[1] + 1; i++) {
+    beamM.push([(i - .5) * CW + off, (yTopBoard + yBotBoard) / 2, z, .13, 90, DEPTH + .02]);
+  }
+});
+const beams = new THREE.InstancedMesh(box, woodMat, beamM.length);
+beamM.forEach((b, i) => { m4.compose(vp.set(b[0], b[1], b[2]), qt.identity(), vs.set(b[3], b[4], b[5])); beams.setMatrixAt(i, m4); });
+scene.add(beams);
+
+const strandMat = new THREE.MeshStandardMaterial({ color: 0x241a12, emissive: 0x3a2212, emissiveIntensity: .7, roughness: .55 });
+const strandM = [];
+for (let i = XI[0]; i <= XI[1] + 1; i++) for (let j = ROWS[0] - 1; j <= ROWS[1]; j++) strandM.push([(i - .5) * CW, -j * CH]);
+const strands = new THREE.InstancedMesh(box, strandMat, strandM.length);
+strandM.forEach((s, i) => { m4.compose(vp.set(s[0], s[1], -16), qt.identity(), vs.set(.035, .035, 38)); strands.setMatrixAt(i, m4); });
+scene.add(strands);
+
+{ /* glowing threads: the film's world-lines, stretched through time */
+  const pts = [];
+  for (let n = 0; n < 90; n++) {
+    const x = (Math.round((rand() * (XI[1] - XI[0] + 1)) + XI[0]) - .5) * CW + (rand() < .5 ? 0 : (rand() - .5) * CW * .9);
+    const y = -(Math.round(rand() * (ROWS[1] - ROWS[0]) + ROWS[0])) * CH + rand() * CH;
+    pts.push(x, y, 3, x, y, -36);
+  }
+  for (let n = 0; n < 40; n++) {
+    const z = LAYERS[1 + Math.floor(rand() * (LAYERS.length - 1))] + .9, y = -(Math.round(rand() * 14) - 3) * CH + rand() * CH;
+    pts.push(-latW / 2, y, z, latW / 2, y, z);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xffb978, transparent: true, opacity: .16, blending: THREE.AdditiveBlending, depthWrite: false })));
+}
+
+/* ---------- Backlight panels: light from the room on the other side ---------- */
+const glowMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const glowList = [];
+LAYERS.forEach((z, k) => {
+  for (let i = XI[0]; i <= XI[1]; i++) for (let j = ROWS[0]; j <= ROWS[1]; j++) {
+    const main = k === 0 && i === 0 && j >= 0 && j < YEARS;
+    const inten = main ? 1.15 : (k === 0 ? .5 + rand() * .3 : .42 + rand() * .3);
+    glowList.push([i * CW + layerOff(k), -j * CH + CH / 2, z - .95, inten]);
+  }
+});
+const glows = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), glowMat, glowList.length);
+const col = new THREE.Color();
+glowList.forEach((g, i) => { m4.compose(vp.set(g[0], g[1], g[2]), qt.identity(), vs.set(CW * .98, CH * .98, 1)); glows.setMatrixAt(i, m4); glows.setColorAt(i, col.setRGB(g[3], g[3] * .92, g[3] * .82)); });
+glows.renderOrder = -1;
+scene.add(glows);
+
+/* ---------- Project books (real meshes with printed spines and covers) ---------- */
+const lum = hex => { const c = new THREE.Color(hex); return .2126 * c.r + .7152 * c.g + .0722 * c.b; };
+const inkFor = cloth => lum(cloth) > .35 ? '#2B241C' : '#D6B677';
+const projects = TS.P.concat([TS.ABOUT]);
+const bookMeshes = [], byId = {};
+const SERIF = '"Cormorant Garamond", "EB Garamond", Georgia, serif';
+const MONO = '"Geist Mono", ui-monospace, Menlo, monospace';
+
+function clothNoise(g, w, h, n) {
+  for (let i = 0; i < n; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '0,0,0'},${.025 + Math.random() * .045})`; g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 2, 1); }
+}
+function spineTex(p, t, h) {
+  const W = 128, H = Math.min(1024, Math.round(W * h / t)), ink = inkFor(p.cloth);
+  return canvasTex(W, H, (g) => {
+    g.fillStyle = p.cloth; g.fillRect(0, 0, W, H);
+    clothNoise(g, W, H, 2400);
+    const sh = g.createLinearGradient(0, 0, W, 0);
+    sh.addColorStop(0, 'rgba(0,0,0,.38)'); sh.addColorStop(.28, 'rgba(255,255,255,.05)'); sh.addColorStop(.55, 'rgba(255,255,255,.09)'); sh.addColorStop(1, 'rgba(0,0,0,.42)');
+    g.fillStyle = sh; g.fillRect(0, 0, W, H);
+    g.fillStyle = ink;
+    [.05, .062, .936, .948].forEach(f => g.fillRect(12, H * f, W - 24, 3));
+    g.save();
+    g.translate(W / 2 + 3, H * .1);
+    g.rotate(Math.PI / 2);
+    let fs = 54; g.font = `600 ${fs}px ${SERIF}`;
+    const maxL = H * .68;
+    while (g.measureText(p.title).width > maxL && fs > 26) { fs -= 2; g.font = `600 ${fs}px ${SERIF}`; }
+    g.textBaseline = 'middle'; g.fillStyle = ink; g.fillText(p.title, 0, 0);
+    g.restore();
+    g.textAlign = 'center'; g.fillStyle = ink;
+    g.font = `500 19px ${MONO}`; g.fillText(p.id === 'about' ? 'S·M' : String(p.year), W / 2, H * .885);
+    g.font = `600 30px ${SERIF}`; g.fillText('⁂', W / 2, H * .82);
+  });
+}
+function wrapLines(g, text, maxW) {
+  const words = text.split(' '), lines = []; let line = '';
+  words.forEach(w => { const test = line ? line + ' ' + w : w; if (g.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test; });
+  if (line) lines.push(line); return lines;
+}
+function drawCover(g, W, H, p) {
+  const ink = inkFor(p.cloth);
+  g.fillStyle = p.cloth; g.fillRect(0, 0, W, H);
+  clothNoise(g, W, H, 6000);
+  const sh = g.createLinearGradient(0, 0, W, 0); sh.addColorStop(0, 'rgba(0,0,0,.3)'); sh.addColorStop(.06, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.12)');
+  g.fillStyle = sh; g.fillRect(0, 0, W, H);
+  g.strokeStyle = ink; g.lineWidth = 3; g.strokeRect(34, 34, W - 68, H - 68); g.lineWidth = 1.2; g.strokeRect(46, 46, W - 92, H - 92);
+  g.fillStyle = ink; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  if (p.id === 'about') {
+    const src = TS.portrait().source;
+    g.save(); g.beginPath(); g.ellipse(W / 2, H * .43, W * .27, H * .23, 0, 0, Math.PI * 2); g.clip();
+    const iw = src.naturalWidth || src.width, ih = src.naturalHeight || src.height, bw = W * .54, bh = H * .46, sc = Math.max(bw / iw, bh / ih);
+    g.drawImage(src, W / 2 - iw * sc / 2, H * .43 - ih * sc / 2, iw * sc, ih * sc);
+    g.restore();
+    g.lineWidth = 2; g.beginPath(); g.ellipse(W / 2, H * .43, W * .27 + 8, H * .23 + 8, 0, 0, Math.PI * 2); g.stroke();
+    g.font = `500 66px ${SERIF}`; g.fillText('Scott Moss', W / 2, H * .76);
+    g.font = `500 17px ${MONO}`; g.fillText('ABOUT THE AUTHOR', W / 2, H * .83);
+    return;
+  }
+  g.font = `500 22px ${MONO}`; g.fillText(p.kind.toUpperCase(), W / 2, H * .2);
+  let fs = 76; g.font = `500 ${fs}px ${SERIF}`;
+  let lines = wrapLines(g, p.title, W - 150);
+  while (lines.length > 3 && fs > 44) { fs -= 6; g.font = `500 ${fs}px ${SERIF}`; lines = wrapLines(g, p.title, W - 150); }
+  const y0 = H * .44 - (lines.length - 1) * fs * .55;
+  lines.forEach((l, i) => g.fillText(l, W / 2, y0 + i * fs * 1.05));
+  g.font = `600 40px ${SERIF}`; g.fillText('⁂', W / 2, H * .66);
+  g.font = `500 22px ${MONO}`; g.fillText(`SCOTT MOSS · ${p.year}`, W / 2, H * .84);
+}
+
+const pageMat = new THREE.MeshStandardMaterial({ color: 0xd8ccb2, roughness: .95 });
+let aboutCover = null;
+function makeBook(p) {
+  const about = p.id === 'about';
+  const t = about ? .44 : .3 + (p.title.length % 4) * .03;
+  const h = about ? 2.6 : 2.18 + ((p.title.length * 7) % 5) * .08;
+  const d = 1.52;
+  const sTex = spineTex(p, t, h);
+  const cTex = canvasTex(512, Math.round(512 * h / d), (g, W, H) => drawCover(g, W, H, p));
+  if (about) aboutCover = cTex;
+  const clothMat = new THREE.MeshStandardMaterial({ color: p.cloth, roughness: .85 });
+  const spineMat = new THREE.MeshStandardMaterial({ map: sTex, roughness: .72, emissive: 0xffffff, emissiveMap: sTex, emissiveIntensity: 0 });
+  const coverMat = new THREE.MeshStandardMaterial({ map: cTex, roughness: .8, emissive: 0xffffff, emissiveMap: cTex, emissiveIntensity: .05 });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(t, h, d), [coverMat, clothMat, pageMat, pageMat, spineMat, pageMat]);
+  m.userData = { id: p.id, p, t, h, d, slide: 0, spineMat, home: new THREE.Vector3(), flying: false };
+  bookMeshes.push(m); byId[p.id] = m;
+  scene.add(m);
+  return m;
+}
+
+const reserves = {};
+for (let j = 0; j < YEARS; j++) {
+  const year = TOP_YEAR - j;
+  const list = projects.filter(p => p.year === year);
+  if (p_about_last(list)) list.push(list.splice(list.findIndex(p => p.id === 'about'), 1)[0]);
+  const meshes = list.map(makeBook);
+  const total = meshes.reduce((a, m) => a + m.userData.t, 0) + (meshes.length - 1) * .05;
+  let x = .25 - total / 2;
+  reserves[j] = [x - .12, x + total + .12];
+  const yb = -j * CH + BT0 / 2;
+  meshes.forEach(m => {
+    const u = m.userData;
+    u.home.set(x + u.t / 2, yb + u.h / 2, .75 - u.d / 2);
+    m.position.copy(u.home);
+    x += u.t + .05;
+  });
+}
+function p_about_last(list) { return list.some(p => p.id === 'about'); }
+
+/* year engraved in brass on the board under each year's books */
+LAYERS.length && (() => {
+  for (let j = 0; j < YEARS; j++) {
+    const tex = canvasTex(512, 96, (g, w, h) => {
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `600 64px ${SERIF}`;
+      if ('letterSpacing' in g) g.letterSpacing = '22px';
+      g.fillStyle = 'rgba(0,0,0,.65)'; g.fillText(String(TOP_YEAR - j), w / 2 + 11, h / 2 + 3);
+      const gr = g.createLinearGradient(0, 10, 0, h - 10); gr.addColorStop(0, '#E8CB8E'); gr.addColorStop(1, '#9C7440');
+      g.fillStyle = gr; g.fillText(String(TOP_YEAR - j), w / 2 + 11, h / 2);
+    });
+    const plq = new THREE.Mesh(new THREE.PlaneGeometry(1.25, .235), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: .4, metalness: .6, emissive: 0x6b4a22, emissiveMap: tex, emissiveIntensity: .35 }));
+    plq.position.set(.25, -j * CH, .752);
+    scene.add(plq);
+  }
+})();
+
+/* ---------- Filler books: instanced, filling every cell of the lattice ---------- */
+const PALETTE = ['#5a2a27', '#263247', '#2f3d33', '#7d6237', '#b9ab8a', '#46423e', '#4b3426', '#34494a', '#6b4a3a', '#3a3f52', '#8c7f66', '#2a2622', '#5e5a4a', '#713d2c'].map(c => new THREE.Color(c));
+const filler = [];
+function fillCell(x0, x1, yb, z, reserve) {
+  let x = x0 + .07;
+  const blocked = (a, b) => reserve && b > reserve[0] && a < reserve[1];
+  while (x < x1 - .12) {
+    if (reserve && x >= reserve[0] - .02 && x < reserve[1]) { x = reserve[1] + .02; continue; }
+    const r = rand();
+    if (r < .045) { x += .25 + rand() * .55; continue; }
+    if (r < .085) {
+      const L = 1.45 + rand() * .4;
+      if (x + L < x1 - .08 && !blocked(x, x + L)) {
+        let y = yb; const n = 2 + Math.floor(rand() * 3);
+        for (let k = 0; k < n; k++) { const th = .11 + rand() * .12, dd = 1.15 + rand() * .3; filler.push([x + L / 2 + (rand() - .5) * .08, y + th / 2, z + .75 - dd / 2, L - rand() * .2, th, dd, 0]); y += th; }
+        x += L + .1; continue;
+      }
+    }
+    const th = .13 + rand() * .2, hh = 1.6 + rand() * 1.0, dd = 1.2 + rand() * .3;
+    if (x + th > x1 - .07) break;
+    if (blocked(x, x + th)) { x = reserve[1] + .02; continue; }
+    let rz = 0;
+    if (rand() < .03) rz = (rand() < .5 ? -1 : 1) * (.1 + rand() * .16);
+    const lean = Math.abs(Math.sin(rz)) * hh;
+    filler.push([x + th / 2 + lean / 2, yb + hh / 2 * Math.cos(rz) + th / 2 * Math.abs(Math.sin(rz)), z + .75 - dd / 2, th, hh, dd, rz]);
+    x += th + lean + .004 + rand() * .018;
+  }
+}
+LAYERS.forEach((z, k) => {
+  const off = layerOff(k);
+  for (let i = XI[0]; i <= XI[1]; i++) for (let j = ROWS[0]; j <= ROWS[1]; j++) {
+    const cx = i * CW + off;
+    const reserve = (k === 0 && i === 0 && reserves[j]) ? reserves[j] : null;
+    fillCell(cx - CW / 2 + .065, cx + CW / 2 - .065, -j * CH + (k === 0 ? BT0 : BT) / 2, z, reserve);
+  }
+});
+const fillMat = new THREE.MeshStandardMaterial({ map: fillerTex, color: 0xffffff, roughness: .84 });
+const books = new THREE.InstancedMesh(box, fillMat, filler.length);
+filler.forEach((b, i) => {
+  m4.compose(vp.set(b[0], b[1], b[2]), qt.setFromEuler(eu.set(0, 0, b[6])), vs.set(b[3], b[4], b[5]));
+  books.setMatrixAt(i, m4);
+  books.setColorAt(i, col.copy(PALETTE[Math.floor(rand() * PALETTE.length)]).multiplyScalar(.75 + rand() * .45));
+});
+scene.add(books);
+
+/* ---------- Dust ---------- */
+const DUST = small ? 500 : 1000;
+const dustPos = new Float32Array(DUST * 3), dustSeed = new Float32Array(DUST * 4);
+for (let i = 0; i < DUST; i++) { dustSeed[i * 4] = (rand() - .5) * 20; dustSeed[i * 4 + 1] = rand() * 14; dustSeed[i * 4 + 2] = -7 + rand() * 12; dustSeed[i * 4 + 3] = rand() * 100; }
+const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ size: .055, map: dotTex, color: 0xffc98f, transparent: true, opacity: .75, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true }));
+dust.frustumCulled = false;
+scene.add(dust);
+
+/* ---------- Morse in the dust: S T A Y ---------- */
+const dropMat = new THREE.MeshBasicMaterial({ map: dotTex, color: 0xffc27a, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false });
+const dropGeo = new THREE.PlaneGeometry(1, 1);
+const dropQueue = [], drops = [];
+function runMorse() {
+  if (document.hidden || busy || TS.isOpen()) { setTimeout(runMorse, 9000); return; }
+  const U = 250; let t = performance.now();
+  for (const ch of '... - .- -.--') { if (ch === ' ') { t += U * 2; continue; } dropQueue.push({ at: t, dash: ch === '-' }); t += (ch === '-' ? 3 : 1) * U + U; }
+  setTimeout(runMorse, 60000 + Math.random() * 25000);
+}
+if (!reduce) setTimeout(runMorse, 11000);
+
+/* ---------- Post-processing ---------- */
+const CPR = Math.min(DPR, 1.5);
+const rt = new THREE.WebGLRenderTarget(innerWidth * CPR, innerHeight * CPR, { type: THREE.HalfFloatType, samples: 4 });
+const composer = new EffectComposer(renderer, rt);
+composer.setPixelRatio(CPR);
+composer.setSize(innerWidth, innerHeight);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), small ? .7 : .85, .6, .6);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+/* ---------- Camera, input and state ---------- */
+let camZ = 10;
+function fitCamera() {
+  const a = innerWidth / innerHeight, t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const fitW = a < .8 ? 4.6 : 9.4;
+  camZ = Math.max(2.4 / t, fitW / 2 / (t * a)) + .7;
+}
+fitCamera();
+let scrollT = 0, scrollP = 0, lastInput = performance.now(), snapT = 0, busy = false, pending = null, hovered = null, flying = null, lastYi = 0;
+const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+let drift = 0, introStart = performance.now();
+
+function nudge(d) {
+  scrollT = Math.max(-.35, Math.min(YEARS - 1 + .35, scrollT + d));
+  lastInput = performance.now();
+  clearTimeout(snapT);
+  snapT = setTimeout(() => { scrollT = Math.round(Math.max(0, Math.min(YEARS - 1, scrollT))); }, 600);
+}
+addEventListener('wheel', e => {
+  if (TS.isOpen()) return;
+  e.preventDefault();
+  if (busy) return;
+  const k = e.deltaMode === 1 ? 36 : e.deltaMode === 2 ? 700 : 1;
+  nudge(e.deltaY * k * .0024);
+}, { passive: false });
+let tY = 0;
+canvas.addEventListener('touchstart', e => { tY = e.touches[0].clientY; lastInput = performance.now(); }, { passive: true });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (busy || TS.isOpen()) return;
+  const y = e.touches[0].clientY; nudge((tY - y) * .009); tY = y;
+}, { passive: false });
+addEventListener('keydown', e => {
+  if (TS.isOpen() || busy) return;
+  if (['ArrowDown', 'PageDown', 'j'].includes(e.key)) { e.preventDefault(); clearTimeout(snapT); scrollT = Math.min(YEARS - 1, Math.round(scrollT) + 1); lastInput = performance.now(); }
+  if (['ArrowUp', 'PageUp', 'k'].includes(e.key)) { e.preventDefault(); clearTimeout(snapT); scrollT = Math.max(0, Math.round(scrollT) - 1); lastInput = performance.now(); }
+});
+
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pick(cx, cy) {
+  ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObjects(bookMeshes, false)[0];
+  return hit ? hit.object : null;
+}
+function setHover(m, e) {
+  if (hovered !== m) { hovered = m; canvas.style.cursor = m ? 'pointer' : ''; }
+  if (m && e) TS.showTip(m.userData.p, e.clientX, e.clientY); else TS.hideTip();
+}
+addEventListener('pointermove', e => {
+  mouse.tx = e.clientX / innerWidth * 2 - 1; mouse.ty = e.clientY / innerHeight * 2 - 1;
+  lastInput = performance.now();
+  if (e.pointerType === 'mouse' && !busy && !TS.isOpen() && e.target === canvas) setHover(pick(e.clientX, e.clientY), e);
+  else if (e.target !== canvas && hovered) setHover(null);
+});
+canvas.addEventListener('click', e => {
+  if (busy || TS.isOpen()) return;
+  const m = pick(e.clientX, e.clientY);
+  if (m) openBook(m.userData.id);
+});
+
+const fwd = new THREE.Vector3();
+function tween(m, p1, r1, dur, done) {
+  m.userData.flying = true;
+  flying = { m, p0: m.position.clone(), p1, r0: m.rotation.y, r1, t0: performance.now(), dur, done };
+  if (!dur) stepFly(performance.now());
+}
+function stepFly(now) {
+  const f = flying; if (!f) return;
+  const k = f.dur ? Math.min(1, (now - f.t0) / f.dur) : 1;
+  const e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  f.m.position.lerpVectors(f.p0, f.p1, e);
+  f.m.position.y += Math.sin(Math.PI * e) * .3;
+  f.m.rotation.y = f.r0 + (f.r1 - f.r0) * e;
+  f.m.rotation.x = Math.sin(Math.PI * e) * .1;
+  f.m.rotation.z = -Math.sin(Math.PI * e) * .06;
+  if (k >= 1) { flying = null; f.m.rotation.x = 0; f.m.rotation.z = 0; f.done(); }
+}
+function openBook(id) {
+  const m = byId[id]; if (!m || busy) return;
+  busy = true; setHover(null);
+  camera.getWorldDirection(fwd);
+  const to = camera.position.clone().addScaledVector(fwd, 4.4);
+  tween(m, to, -Math.PI / 2 + .14, reduce ? 0 : 820, () => {});
+  setTimeout(() => TS.openSpread(id, true), reduce ? 0 : 560);
+}
+TS.onClosed = id => {
+  const m = byId[id]; if (!m) { busy = false; return; }
+  tween(m, m.userData.home.clone(), 0, reduce ? 0 : 720, () => { m.userData.flying = false; m.userData.slide = 0; busy = false; });
+};
+TS.onPortrait = () => {
+  if (!aboutCover) return;
+  const c = aboutCover.image, g = c.getContext('2d');
+  drawCover(g, c.width, c.height, TS.ABOUT);
+  aboutCover.needsUpdate = true;
+};
+TS.gl = {
+  goTo(id) {
+    const m = byId[id]; if (!m) return;
+    clearTimeout(snapT);
+    scrollT = rowOf(m.userData.p.year);
+    pending = id;
+  }
+};
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); fitCamera();
+  renderer.setSize(innerWidth, innerHeight, false);
+  composer.setSize(innerWidth, innerHeight);
+});
+
+/* ---------- Loop ---------- */
+let raf = 0, running = false, last = performance.now(), time = 0, firstFrame = true;
+const tmpV = new THREE.Vector3();
+function frame(now) {
+  raf = requestAnimationFrame(frame);
+  const dt = Math.min(.05, (now - last) / 1000); last = now; time += dt;
+
+  scrollP += (scrollT - scrollP) * (1 - Math.exp(-dt * (reduce ? 60 : 4.2)));
+  const yi = Math.round(Math.max(0, Math.min(YEARS - 1, scrollP)));
+  if (yi !== lastYi) { lastYi = yi; TS.setYear(TOP_YEAR - yi, yi); }
+  if (pending && Math.abs(scrollP - scrollT) < .025 && !busy) { const id = pending; pending = null; openBook(id); }
+
+  const idle = !reduce && !busy && now - lastInput > 4500;
+  drift += ((idle ? 1 : 0) - drift) * (1 - Math.exp(-dt * .6));
+  const ease = reduce ? 1 : 1 - Math.pow(1 - Math.min(1, (now - introStart) / 3200), 3);
+  if (!busy) { mouse.x += (mouse.tx - mouse.x) * (1 - Math.exp(-dt * 3)); mouse.y += (mouse.ty - mouse.y) * (1 - Math.exp(-dt * 3)); }
+  const baseY = -scrollP * CH + 1.42;
+  const px = (reduce ? 0 : mouse.x * .75) + drift * Math.sin(time * .09) * 1.4;
+  const py = (reduce ? 0 : -mouse.y * .32) + drift * Math.sin(time * .13) * .3;
+  camera.position.set(px, baseY + py + (1 - ease) * 1.2, camZ + (1 - ease) * 7);
+  camera.lookAt(px * .18 + drift * Math.sin(time * .05) * .5, baseY - .04, 0);
+  camLight.position.set(camera.position.x * .6, camera.position.y + 1.2, camera.position.z - 2.5);
+
+  for (const m of bookMeshes) {
+    const u = m.userData;
+    if (u.flying) continue;
+    const target = m === hovered ? .62 : 0;
+    u.slide += (target - u.slide) * (1 - Math.exp(-dt * (reduce ? 60 : 9)));
+    m.position.set(u.home.x, u.home.y, u.home.z + u.slide);
+    m.rotation.y = u.slide * .09;
+    u.spineMat.emissiveIntensity = u.slide * .32;
+  }
+  if (flying) stepFly(now);
+
+  for (let i = 0; i < DUST; i++) {
+    const s = i * 4, sp = .12 + (dustSeed[s + 3] % 1) * .18;
+    const yy = ((dustSeed[s + 1] + time * sp) % 14 + 14) % 14;
+    dustPos[i * 3] = dustSeed[s] + Math.sin(time * .3 + dustSeed[s + 3]) * .4;
+    dustPos[i * 3 + 1] = camera.position.y - 7 + yy;
+    dustPos[i * 3 + 2] = dustSeed[s + 2] + Math.cos(time * .21 + dustSeed[s + 3]) * .3;
+  }
+  dustGeo.attributes.position.needsUpdate = true;
+
+  while (dropQueue.length && dropQueue[0].at <= now) {
+    const q = dropQueue.shift(), m = new THREE.Mesh(dropGeo, dropMat);
+    m.scale.set(.04, q.dash ? .44 : .075, 1);
+    m.position.set(-2.4, camera.position.y + 3.6, 1.9);
+    scene.add(m); drops.push(m);
+  }
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const m = drops[i]; m.position.y -= 1.45 * dt; m.lookAt(tmpV.copy(camera.position).setY(m.position.y));
+    if (m.position.y < camera.position.y - 4.5) { scene.remove(m); drops.splice(i, 1); }
+  }
+
+  composer.render();
+  if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); }
+}
+function start() { if (running) return; running = true; last = performance.now(); raf = requestAnimationFrame(frame); }
+function stop() { running = false; cancelAnimationFrame(raf); }
+document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+
+const fontsReady = Promise.race([
+  Promise.all([document.fonts.load(`600 48px ${SERIF}`), document.fonts.load(`500 20px ${MONO}`)]),
+  new Promise(r => setTimeout(r, 2500))
+]);
+fontsReady.then(() => {
+  /* re-draw printed textures once the book faces have loaded */
+  for (const m of bookMeshes) {
+    const u = m.userData;
+    const sMap = u.spineMat.map, c = sMap.image, g = c.getContext('2d');
+    const fresh = spineTex(u.p, u.t, u.h).image; g.clearRect(0, 0, c.width, c.height); g.drawImage(fresh, 0, 0); sMap.needsUpdate = true;
+    const cMap = m.material[0].map, cc = cMap.image; drawCover(cc.getContext('2d'), cc.width, cc.height, u.p); cMap.needsUpdate = true;
+  }
+}).finally(() => { if (!document.hidden) start(); introStart = performance.now(); });
+</script>
+</body>
+</html>
