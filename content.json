@@ -105,7 +105,16 @@
     {
       "type": "apps",
       "title": "Apps",
-      "items": []
+      "items": [
+        {
+          "name": "Direction",
+          "description": "Direct the film in your head",
+          "url": "https://givedirection.ai",
+          "icon": "/icons/direction.png",
+          "tint": "#1A1A1D",
+          "platform": "macOS"
+        }
+      ]
     },
     {
       "type": "oss",

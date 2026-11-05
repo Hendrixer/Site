@@ -547,6 +547,10 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     box-shadow: 0 12px 24px -12px color-mix(in oklab, var(--tint) 80%, #000), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
     transition: transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
   }
+  .icon {
+    outline: 1px solid color-mix(in oklab, var(--text) 12%, transparent);
+    outline-offset: -1px;
+  }
   .icon img {
     display: block;
     width: 100%;
