@@ -4,22 +4,34 @@ import { join } from 'node:path';
 import Base from '../layouts/Base.astro';
 import { profile, visibleSections } from '../lib/content';
 import { compact, getStars, monthYear } from '../lib/format';
+import { hostOf, previewFor } from '../lib/og';
 
-// Star counts for open-source items are read from GitHub at build time when `repo` is set.
+// Build-time enrichment:
+// - open source: star counts from GitHub when `repo` is set
+// - apps: a preview image from the app's own site (its og:image) unless `image` is set
 const sections = await Promise.all(
-  visibleSections.map(async (section) =>
-    section.type === 'oss'
-      ? {
-          ...section,
-          items: await Promise.all(
-            section.items.map(async (item) => ({
-              ...item,
-              stars: item.repo ? await getStars(item.repo, item.stars ?? 0) : item.stars,
-            })),
-          ),
-        }
-      : section,
-  ),
+  visibleSections.map(async (section) => {
+    if (section.type === 'oss') {
+      return {
+        ...section,
+        items: await Promise.all(
+          section.items.map(async (item) => ({
+            ...item,
+            stars: item.repo ? await getStars(item.repo, item.stars ?? 0) : item.stars,
+          })),
+        ),
+      };
+    }
+    if (section.type === 'apps') {
+      return {
+        ...section,
+        items: await Promise.all(
+          section.items.map(async (app) => ({ ...app, preview: await previewFor(app.image, app.url) })),
+        ),
+      };
+    }
+    return section;
+  }),
 );
 
 const seen = new Map<string, number>();
@@ -129,13 +141,24 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
           {heading}
           <div class="cards apps">
             {section.items.map((app) => (
-              <a class="card" href={app.url} style={`--tint:${app.tint}`} {...external(app.url)}>
-                <div class="tile">
-                  <span class="icon"><img src={app.icon} alt="" width="68" height="68" loading="lazy" /></span>
-                  {app.platform && <em>{app.platform}</em>}
+              <a class="card app" href={app.url} style={`--tint:${app.tint}`} {...external(app.url)}>
+                {app.preview ? (
+                  <div class="shot">
+                    <img src={app.preview.src} srcset={app.preview.srcset} sizes="(max-width: 560px) 100vw, 640px" alt={`${app.name} preview`} loading="lazy" decoding="async" />
+                  </div>
+                ) : (
+                  <div class="tile">
+                    {app.icon && <span class="icon"><img src={app.icon} alt="" width="68" height="68" loading="lazy" /></span>}
+                  </div>
+                )}
+                <div class="arow">
+                  {app.preview && app.icon && <span class="icon sm"><img src={app.icon} alt="" width="32" height="32" loading="lazy" /></span>}
+                  <span class="atext">
+                    <span class="an">{app.name}{app.platform && <span class="tag">{app.platform}</span>}</span>
+                    <span class="cm">{meta(app.description, app.year !== undefined && String(app.year))}</span>
+                  </span>
+                  {hostOf(app.url) && <span class="dom">{hostOf(app.url)} ↗</span>}
                 </div>
-                <div class="ct">{app.name}</div>
-                <div class="cm">{meta(app.description, app.year !== undefined && String(app.year))}</div>
               </a>
             ))}
           </div>
@@ -561,6 +584,70 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     transform: translateY(-4px) scale(1.05);
     box-shadow: 0 20px 32px -14px color-mix(in oklab, var(--tint) 80%, #000), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
   }
+  .cards.apps > .card:first-child:nth-last-child(odd) {
+    grid-column: 1 / -1;
+  }
+  .shot {
+    position: relative;
+    aspect-ratio: 1200 / 630;
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--tint) 12%, var(--bg));
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .shot img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.9s var(--ease);
+  }
+  .card:hover .shot img {
+    transform: scale(1.025);
+  }
+  .arow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    margin-top: 12px;
+  }
+  .icon.sm {
+    width: 32px;
+    height: 32px;
+    box-shadow: 0 6px 14px -8px color-mix(in oklab, var(--tint) 80%, #000);
+  }
+  .card:hover .icon.sm {
+    transform: none;
+  }
+  .atext {
+    display: grid;
+    min-width: 0;
+  }
+  .an {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 8px;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+  .atext .cm {
+    margin-top: 1px;
+  }
+  .dom {
+    font: 12.5px/1 var(--mono);
+    color: var(--faint);
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+  .card:hover .dom {
+    color: var(--text);
+  }
+  .card.app:hover .tile {
+    transform: none;
+  }
+
   .tile em {
     position: absolute;
     left: 8px;
@@ -724,7 +811,10 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
       grid-template-columns: 1fr;
     }
     .cards.apps {
-      gap: 18px 12px;
+      grid-template-columns: 1fr;
+    }
+    .dom {
+      display: none;
     }
     .icon {
       width: 54px;

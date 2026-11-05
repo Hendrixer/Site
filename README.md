@@ -32,9 +32,12 @@ Item fields for each section type (`?` means optional):
 { "title": "AI Agents Fundamentals, v2", "url": "https://master.dev/courses/ai-agents-v2/",
   "image?": "/courses/ai-agents-v2.webp", "description?": "...", "duration?": "7h 10m", "date?": "2026-01-20" }
 
-// "apps": cards with an icon. Put icons in public/icons/
-{ "name": "Lull", "description": "...", "url": "https://...", "icon": "/icons/lull.png",
-  "tint?": "#F05A36", "platform?": "iOS", "year?": 2026 }
+// "apps": cards led by a preview image. The build reads the og:image from the app's
+// own site (url), resizes it and serves it from this domain. Set "image" to override it.
+// Put icons in public/icons/. A lone app (or the first of an odd number) spans full width.
+{ "name": "Direction", "description": "A Mac app for directors", "url": "https://givedirection.ai",
+  "icon?": "/icons/direction.png", "image?": "/apps/direction.jpg",
+  "tint?": "#1A1A1D", "platform?": "macOS", "year?": 2026 }
 
 // "oss": rows with stars. With "repo" set, stars come from GitHub at build time.
 // "snippet" shows a code preview when hovering the row.

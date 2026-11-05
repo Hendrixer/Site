@@ -52,7 +52,9 @@ const apps = z.strictObject({
         name: z.string(),
         description: z.string(),
         url: z.string(),
-        icon: z.string(),
+        // Preview image. Leave it out to use the og:image from the app's site.
+        image: z.string().optional(),
+        icon: z.string().optional(),
         tint: z.string().default('#8a8a85'),
         platform: z.string().optional(),
         year: z.union([z.number(), z.string()]).optional(),

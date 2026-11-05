@@ -79,36 +79,12 @@
       ]
     },
     {
-      "type": "work",
-      "title": "Work with me",
-      "lead": "I take on a few engagements at a time, for teams that want AI in their products and want it done responsibly.",
-      "email": "work@mossscott.com",
-      "cta": "Tell me what you’re working on",
-      "items": [
-        {
-          "title": "Safety and evaluation",
-          "tag": "AI safety research",
-          "description": "Red-teaming, evals and failure analysis for models and agents before they reach your users. You get a clear map of where they break and a plan to fix it."
-        },
-        {
-          "title": "From demos to production",
-          "tag": "Consulting",
-          "description": "For teams stuck between impressive prototypes and shipped features. We pick the workflows worth automating, build them properly and train your engineers to own them."
-        },
-        {
-          "title": "Fractional Chief AI Officer",
-          "tag": "Leadership",
-          "description": "Senior AI leadership a few days a month, without a full-time hire. I own the roadmap, model and vendor choices, hiring, and the governance your board will ask about."
-        }
-      ]
-    },
-    {
       "type": "apps",
       "title": "Apps",
       "items": [
         {
           "name": "Direction",
-          "description": "Direct the film in your head",
+          "description": "A Mac app for directors",
           "url": "https://givedirection.ai",
           "icon": "/icons/direction.png",
           "tint": "#1A1A1D",
@@ -133,6 +109,30 @@
         "url": ""
       },
       "items": []
+    },
+    {
+      "type": "work",
+      "title": "Work with me",
+      "lead": "I take on a few engagements at a time, for teams that want AI in their products and want it done responsibly.",
+      "email": "work@mossscott.com",
+      "cta": "Tell me what you’re working on",
+      "items": [
+        {
+          "title": "Safety and evaluation",
+          "tag": "AI safety research",
+          "description": "Red-teaming, evals and failure analysis for models and agents before they reach your users. You get a clear map of where they break and a plan to fix it."
+        },
+        {
+          "title": "From demos to production",
+          "tag": "Consulting",
+          "description": "For teams stuck between impressive prototypes and shipped features. We pick the workflows worth automating, build them properly and train your engineers to own them."
+        },
+        {
+          "title": "Fractional Chief AI Officer",
+          "tag": "Leadership",
+          "description": "Senior AI leadership a few days a month, without a full-time hire. I own the roadmap, model and vendor choices, hiring, and the governance your board will ask about."
+        }
+      ]
     }
   ]
 }
