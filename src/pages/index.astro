@@ -97,7 +97,7 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
           <section id={id} class="in" style={style}>
             {heading}
             {section.lead && <p class="lead">{section.lead}</p>}
-            <ol class="offers">
+            {section.items.length > 0 && <ol class="offers">
               {section.items.map((offer, n) => (
                 <li class="offer">
                   <span class="n">{String(n + 1).padStart(2, '0')}</span>
@@ -107,7 +107,7 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
                   </div>
                 </li>
               ))}
-            </ol>
+            </ol>}
             <div class="cta">
               <a class="mail" href={mailto}>{section.cta}<span aria-hidden="true">→</span></a>
               <button class="copy addr" type="button" data-email={section.email}>{section.email}<span>copy</span></button>

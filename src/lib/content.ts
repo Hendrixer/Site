@@ -1,7 +1,7 @@
 // Reads and validates content.json at the repo root.
 // The page renders sections in the order they appear in `sections`,
 // and items in the order they appear in each section's `items`.
-// A section with no items (or "hidden": true) isn't rendered.
+// A section with no items (or "hidden": true) isn't rendered, except Work with me.
 import { z } from 'astro/zod';
 import raw from '../../content.json';
 
@@ -151,4 +151,7 @@ export const content = parsed.data;
 export const profile = content.profile;
 export type Section = (typeof content.sections)[number];
 
-export const visibleSections = content.sections.filter((s) => !s.hidden && s.items.length > 0);
+// Work with me only needs its lead and email, so it shows even without items.
+export const visibleSections = content.sections.filter(
+  (s) => !s.hidden && (s.items.length > 0 || s.type === 'work'),
+);
