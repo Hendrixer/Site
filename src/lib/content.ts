@@ -100,6 +100,25 @@ const videos = z.strictObject({
     .default([]),
 });
 
+const courses = z.strictObject({
+  type: z.literal('courses'),
+  title: z.string().default('Courses'),
+  hidden: z.boolean().default(false),
+  link: link.optional(),
+  items: z
+    .array(
+      z.strictObject({
+        title: z.string(),
+        url: z.string(),
+        image: z.string().optional(),
+        description: z.string().optional(),
+        duration: z.string().optional(),
+        date: z.coerce.date().optional(),
+      }),
+    )
+    .default([]),
+});
+
 const schema = z.strictObject({
   profile: z.strictObject({
     name: z.string(),
@@ -118,7 +137,7 @@ const schema = z.strictObject({
       })
       .default({ youtube: '', github: '', x: '' }),
   }),
-  sections: z.array(z.discriminatedUnion('type', [research, work, apps, oss, videos])),
+  sections: z.array(z.discriminatedUnion('type', [research, work, courses, apps, oss, videos])),
 });
 
 const parsed = schema.safeParse(raw);

@@ -28,6 +28,10 @@ Item fields for each section type (`?` means optional):
 // "work": the offerings in Work with me (the section also takes lead, email and cta)
 { "title": "Safety and evaluation", "tag?": "AI safety research", "description": "..." }
 
+// "courses": rows with square course art. Put images in public/courses/
+{ "title": "AI Agents Fundamentals, v2", "url": "https://master.dev/courses/ai-agents-v2/",
+  "image?": "/courses/ai-agents-v2.webp", "description?": "...", "duration?": "7h 10m", "date?": "2026-01-20" }
+
 // "apps": cards with an icon. Put icons in public/icons/
 { "name": "Lull", "description": "...", "url": "https://...", "icon": "/icons/lull.png",
   "tint?": "#F05A36", "platform?": "iOS", "year?": 2026 }

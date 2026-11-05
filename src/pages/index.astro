@@ -104,6 +104,26 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
         );
       }
 
+      if (section.type === 'courses') return (
+        <section id={id} class="in" style={style}>
+          {heading}
+          <ol class="rows courses">
+            {section.items.map((course) => (
+              <li>
+                <a class="row" href={course.url} {...external(course.url)}>
+                  {course.image ? <img class="cimg" src={course.image} alt="" width="44" height="44" loading="lazy" /> : <span class="cimg" aria-hidden="true"></span>}
+                  <span class="ctext">
+                    <span class="t">{course.title}</span>
+                    {course.description && <span class="d">{course.description}</span>}
+                  </span>
+                  <span class="m">{meta(course.duration, course.date && monthYear(course.date))}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      );
+
       if (section.type === 'apps') return (
         <section id={id} class="in" style={style}>
           {heading}
@@ -371,6 +391,40 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
   .dated .row:hover .arr {
     opacity: 1;
     transform: none;
+  }
+
+  .courses .row {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 14px;
+    padding: 8px 10px;
+  }
+  .cimg {
+    display: block;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--hover);
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+    transition: transform 0.45s var(--ease);
+  }
+  .courses .row:hover .cimg {
+    transform: scale(1.06) rotate(-2deg);
+  }
+  .ctext {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+  .courses .t {
+    white-space: normal;
+    line-height: 1.4;
+  }
+  .courses .d {
+    font-size: 13.5px;
+    line-height: 1.45;
   }
 
   .lead {
@@ -641,6 +695,15 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     .row .d {
       grid-column: 1 / -1;
       grid-row: 2;
+    }
+    .courses .row {
+      grid-template-columns: 44px minmax(0, 1fr);
+      align-items: start;
+    }
+    .courses .row .m {
+      grid-column: 2;
+      grid-row: 2;
+      margin-top: 4px;
     }
     .dated .row {
       grid-template-columns: minmax(0, 1fr) auto;

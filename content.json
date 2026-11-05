@@ -2,9 +2,9 @@
   "profile": {
     "name": "Scott Moss",
     "initials": "SM",
-    "tagline": "Builds products. Teaches on YouTube.",
+    "tagline": "Builds products. Teaches on Master.dev and YouTube.",
     "description": "Scott Moss builds apps and open-source tools, does AI research, and explains how it all works on YouTube.",
-    "intro": "I build apps and open-source tools, do AI research, and explain how it all works on YouTube. I also help companies put AI to work, safely.",
+    "intro": "I build apps and open-source tools, do AI research, and teach how it all works in courses on Master.dev and on YouTube. I also help companies put AI to work, safely.",
     "now": "",
     "email": "hello@mossscott.com",
     "portrait": "/portrait.jpg",
@@ -19,6 +19,64 @@
       "type": "research",
       "title": "AI Research",
       "items": []
+    },
+    {
+      "type": "courses",
+      "title": "Courses",
+      "link": {
+        "label": "All courses",
+        "url": "https://master.dev/teachers/scott-moss/"
+      },
+      "items": [
+        {
+          "title": "Build an Agent that Never Sleeps",
+          "url": "https://master.dev/courses/background-ai-agents/",
+          "image": "/courses/background-ai-agents.webp",
+          "description": "Background agents that observe, act, recover from interruptions and ask for help.",
+          "duration": "5h 1m",
+          "date": "2026-10-12"
+        },
+        {
+          "title": "Harness Engineering & Agent Orchestration",
+          "url": "https://master.dev/courses/agent-harness/",
+          "image": "/courses/agent-harness.webp",
+          "description": "Workflows, sandboxes, memory and multi-agent handoffs for production agents.",
+          "duration": "5h 5m",
+          "date": "2026-07-01"
+        },
+        {
+          "title": "Applied AI Engineering Fundamentals",
+          "url": "https://master.dev/courses/ai-engineering/",
+          "image": "/courses/ai-engineering.webp",
+          "description": "Context engineering, RAG and eval harnesses for AI features that improve over time.",
+          "duration": "9h 5m",
+          "date": "2026-04-28"
+        },
+        {
+          "title": "AI Agents Fundamentals, v2",
+          "url": "https://master.dev/courses/ai-agents-v2/",
+          "image": "/courses/ai-agents-v2.webp",
+          "description": "A CLI agent with tool calling, evals, context management and human approval.",
+          "duration": "7h 10m",
+          "date": "2026-01-20"
+        },
+        {
+          "title": "API Design in Node.js, v5",
+          "url": "https://master.dev/courses/api-design-nodejs-v5/",
+          "image": "/courses/api-design-nodejs-v5.webp",
+          "description": "REST APIs with Express, Postgres and JWT auth, tested and deployed.",
+          "duration": "9h 58m",
+          "date": "2025-09-29"
+        },
+        {
+          "title": "Next.js Fundamentals, v4",
+          "url": "https://master.dev/courses/next-js-v4/",
+          "image": "/courses/next-js-v4.webp",
+          "description": "Full-stack React with Server Components, Server Actions, auth and caching.",
+          "duration": "6h 41m",
+          "date": "2025-04-03"
+        }
+      ]
     },
     {
       "type": "work",
@@ -52,13 +110,19 @@
     {
       "type": "oss",
       "title": "Open source",
-      "link": { "label": "GitHub", "url": "" },
+      "link": {
+        "label": "GitHub",
+        "url": ""
+      },
       "items": []
     },
     {
       "type": "videos",
       "title": "Videos",
-      "link": { "label": "YouTube", "url": "" },
+      "link": {
+        "label": "YouTube",
+        "url": ""
+      },
       "items": []
     }
   ]
