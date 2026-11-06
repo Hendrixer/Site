@@ -176,20 +176,18 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
                 {app.preview ? (
                   <div class="shot">
                     <img src={app.preview.src} srcset={app.preview.srcset} sizes="(max-width: 560px) 100vw, 640px" alt={`${app.name} preview`} loading="lazy" decoding="async" />
+                    {hostOf(app.url) && <span class="visit">{hostOf(app.url)}<span aria-hidden="true">↗</span></span>}
                   </div>
                 ) : (
                   <div class="tile">
                     {app.icon && <span class="icon"><img src={app.icon} alt="" width="68" height="68" loading="lazy" /></span>}
                   </div>
                 )}
-                <div class="arow">
+                <div class:list={['arow', { bare: !(app.preview && app.icon) }]}>
                   {app.preview && app.icon && <span class="icon sm"><img src={app.icon} alt="" width="32" height="32" loading="lazy" /></span>}
-                  <span class="atext">
-                    <span class="an">{app.name}{app.platform && <span class="tag">{app.platform}</span>}</span>
-                    {hostOf(app.url) && <span class="dom">{hostOf(app.url)} ↗</span>}
-                  </span>
+                  <span class="an">{app.name}{app.platform && <span class="tag">{app.platform}</span>}</span>
+                  <span class="ad">{meta(app.description, app.year !== undefined && String(app.year))}</span>
                 </div>
-                <span class="cm ad">{meta(app.description, app.year !== undefined && String(app.year))}</span>
               </a>
             ))}
           </div>
@@ -683,8 +681,9 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     transform: translateY(-4px) scale(1.05);
     box-shadow: 0 20px 32px -14px color-mix(in oklab, var(--tint) 80%, #000), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
   }
-  .cards.apps > .card:first-child:nth-last-child(odd) {
-    grid-column: 1 / -1;
+  .cards.apps {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 40px;
   }
   .shot {
     position: relative;
@@ -704,11 +703,66 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
   .card:hover .shot img {
     transform: scale(1.025);
   }
-  .arow {
-    display: flex;
+  /* Hovering the preview dims it and shows where the card goes. */
+  .shot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    transition: background-color 0.35s var(--ease);
+  }
+  .visit {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 12px;
+    gap: 8px;
+    padding: 10px 15px;
+    border-radius: 999px;
+    font: 500 13px/1 var(--mono);
+    color: #fff;
+    white-space: nowrap;
+    background: rgba(18, 18, 18, 0.55);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    backdrop-filter: blur(12px) saturate(1.4);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px));
+    transition: opacity 0.25s, transform 0.45s var(--ease);
+    pointer-events: none;
+  }
+  .card:hover .shot::after,
+  .card:focus-visible .shot::after {
+    background: rgba(0, 0, 0, 0.32);
+  }
+  .card:hover .visit,
+  .card:focus-visible .visit {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  /* Icon on the left, name with its description underneath. */
+  .arow {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-areas: 'icon name' 'icon desc';
+    column-gap: 14px;
+    row-gap: 3px;
+    margin-top: 14px;
+  }
+  .arow.bare {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'name' 'desc';
+  }
+  .arow .icon.sm {
+    grid-area: icon;
+  }
+  .arow .an {
+    grid-area: name;
+  }
+  .arow .ad {
+    grid-area: desc;
   }
   .icon.sm {
     width: 32px;
@@ -717,11 +771,6 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
   }
   .card:hover .icon.sm {
     transform: none;
-  }
-  .atext {
-    display: grid;
-    gap: 3px;
-    min-width: 0;
   }
   .an {
     display: flex;
@@ -733,21 +782,11 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
   }
   .ad {
     display: block;
-    margin-top: 10px;
-    max-width: 52ch;
-    line-height: 1.55;
+    max-width: 62ch;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
     text-wrap: pretty;
-  }
-  .dom {
-    font: 12px/1.2 var(--mono);
-    color: var(--faint);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: color 0.2s;
-  }
-  .card:hover .dom {
-    color: var(--text);
   }
   .card.app:hover .tile {
     transform: none;
@@ -916,14 +955,18 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
       grid-template-columns: 1fr;
     }
     .cards.apps {
-      grid-template-columns: 1fr;
+      row-gap: 32px;
+    }
+    .arow .ad {
+      font-size: 13.5px;
     }
     .icon {
       width: 54px;
       height: 54px;
     }
-    .cards.apps .cm {
-      font-size: 12.5px;
+    .icon.sm {
+      width: 32px;
+      height: 32px;
     }
   }
   @media (prefers-reduced-motion: reduce) {

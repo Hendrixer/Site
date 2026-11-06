@@ -43,7 +43,7 @@ Item fields for each section type (`?` means optional):
 // "apps": cards led by a preview image. The build reads the og:image from the app's
 // own site (url), resizes it and serves it from this domain. Set "image" to override it.
 // "description" can run a sentence or two; it sits under the name.
-// Put icons in public/icons/. A lone app (or the first of an odd number) spans full width.
+// Put icons in public/icons/. Each app gets a full-width card; hovering the preview shows its domain.
 { "name": "Direction", "description": "A Mac app for directors", "url": "https://givedirection.ai",
   "icon?": "/icons/direction.png", "image?": "/apps/direction.jpg",
   "tint?": "#1A1A1D", "platform?": "macOS", "year?": 2026 }
