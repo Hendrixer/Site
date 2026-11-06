@@ -12,9 +12,9 @@
   "profile": {
     "name": "Scott Moss",
     "initials": "SM",
-    "tagline": "AI engineer, moving into AI research",
-    "description": "Scott Moss is an AI engineer moving into AI research. He builds AI systems, teaches on Master.dev and works with teams as an applied AI architect.",
-    "intro": "I’ve spent years building AI systems that run in production. Now I’m moving into research, focused on how those systems fail, how to measure them and how to make them safe. I teach what I learn on Master.dev.",
+    "tagline": "AI engineer, focused on AI safety research",
+    "description": "Scott Moss is an AI engineer focused on AI safety research. He shares what he learns and helps startups and enterprises adopt AI.",
+    "intro": "I’ve spent years building AI systems that run in production. Now my focus is AI safety research: how these systems fail, how to measure them and how to make them safe. I create content sharing what I learn, and I help startups and enterprises adopt AI.",
     "now": "",
     "email": "hello@mossscott.com",
     "portrait": "/portrait.jpg",
@@ -116,7 +116,7 @@
       "type": "work",
       "title": "Work with me",
       "lead": "I’m an applied AI architect. I’ve built AI systems at {netflix} and as a two-time {yc} founder.",
-      "body": "If your team has AI demos that never reach production, or production AI it doesn’t trust, I can help. I design the architecture, set up the evals and work alongside your engineers until it ships and they own it.",
+      "body": "I work with startups and enterprises on AI adoption, from choosing the right problems to systems that hold up in production. I design the architecture, set up the evals and work alongside your engineers until they own it.",
       "email": "work@mossscott.com",
       "cta": "Tell me what you’re building"
     }
