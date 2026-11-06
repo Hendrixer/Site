@@ -170,12 +170,6 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
                   </span>
                   {hostOf(app.url) && <span class="dom">{hostOf(app.url)} ↗</span>}
                 </div>
-                {(app.about || app.why) && (
-                  <div class:list={['about', { indent: app.preview && app.icon }]}>
-                    {app.about && <p><b>What it is</b>{app.about}</p>}
-                    {app.why && <p><b>Why I made it</b>{app.why}</p>}
-                  </div>
-                )}
               </a>
             ))}
           </div>
@@ -647,7 +641,7 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
   .arow {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
+    align-items: start;
     column-gap: 12px;
     margin-top: 12px;
   }
@@ -672,9 +666,12 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     line-height: 1.35;
   }
   .atext .cm {
-    margin-top: 1px;
+    margin-top: 2px;
+    max-width: 52ch;
+    line-height: 1.55;
   }
   .dom {
+    padding-top: 5px;
     font: 12.5px/1 var(--mono);
     color: var(--faint);
     white-space: nowrap;
@@ -683,33 +680,6 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
   .card:hover .dom {
     color: var(--text);
   }
-  .about {
-    display: grid;
-    gap: 12px;
-    margin-top: 14px;
-    font-size: 14.5px;
-    line-height: 1.65;
-    color: var(--muted);
-    text-wrap: pretty;
-  }
-  .about.indent {
-    padding-left: 44px;
-  }
-  .about p {
-    margin: 0;
-    max-width: 62ch;
-  }
-  .about b {
-    display: block;
-    margin-bottom: 2px;
-    font: 500 11.5px/1.5 var(--mono);
-    letter-spacing: 0.02em;
-    color: var(--faint);
-  }
-  .card.app:hover .about b {
-    color: var(--muted);
-  }
-
   .card.app:hover .tile {
     transform: none;
   }
@@ -881,9 +851,6 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     }
     .dom {
       display: none;
-    }
-    .about.indent {
-      padding-left: 0;
     }
     .icon {
       width: 54px;
