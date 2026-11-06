@@ -125,14 +125,20 @@ const courses = z.strictObject({
 const brand = z.strictObject({ name: z.string(), logo: z.string() });
 
 const schema = z.strictObject({
-  // Inline logos. Write {key} in the intro or Work with me text, e.g. {netflix}.
+  // Inline logos. Write {key} in the intro (or Work with me text), e.g. {netflix}.
   brands: z.record(z.string(), brand).default({}),
   profile: z.strictObject({
     name: z.string(),
     initials: z.string().default(''),
     tagline: z.string().default(''),
     description: z.string().default(''),
-    intro: z.string().default(''),
+    // One paragraph as a string, or several as an array of strings.
+    intro: z
+      .union([z.string(), z.array(z.string())])
+      .default([])
+      .transform((v) => (Array.isArray(v) ? v : v ? [v] : [])),
+    // Optional button under the intro that opens an email.
+    cta: z.strictObject({ label: z.string(), email: z.string(), subject: z.string().default('') }).optional(),
     now: z.string().default(''),
     email: z.string(),
     portrait: z.string().default('/portrait.jpg'),

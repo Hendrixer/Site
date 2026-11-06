@@ -63,7 +63,17 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
       </div>
     </header>
 
-    {profile.intro && <p class="intro in" style="--i:1" set:html={rich(profile.intro)} />}
+    {profile.intro.length > 0 && (
+      <div class="intro in" style="--i:1">
+        {profile.intro.map((paragraph) => <p set:html={rich(paragraph)} />)}
+      </div>
+    )}
+    {profile.cta && (
+      <div class="cta top in" style="--i:2">
+        <a class="mail" href={`mailto:${profile.cta.email}${profile.cta.subject ? `?subject=${encodeURIComponent(profile.cta.subject)}` : ''}`}>{profile.cta.label}<span aria-hidden="true">→</span></a>
+        <button class="copy addr" type="button" data-email={profile.cta.email}>{profile.cta.email}<span>copy</span></button>
+      </div>
+    )}
     {profile.now && <div class="now in" style="--i:2"><span class="pulse" aria-hidden="true"></span><b>Now</b>{profile.now}</div>}
 
     {sections.map((section, i) => {
@@ -316,10 +326,24 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     line-height: 1.35;
   }
   .intro {
-    margin: 0 0 20px;
     font-size: 16px;
     line-height: 1.7;
     text-wrap: pretty;
+  }
+  .intro p {
+    margin: 0 0 14px;
+  }
+  .intro p:first-child {
+    font-size: 18px;
+    line-height: 1.55;
+    font-weight: 500;
+    letter-spacing: -0.012em;
+  }
+  .intro p + p {
+    color: var(--muted);
+  }
+  .cta.top {
+    margin: 22px 0 20px;
   }
   .now {
     display: inline-flex;

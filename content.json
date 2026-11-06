@@ -14,7 +14,15 @@
     "initials": "SM",
     "tagline": "AI engineer, focused on AI safety research",
     "description": "Scott Moss is an AI engineer focused on AI safety research. He shares what he learns and helps startups and enterprises adopt AI.",
-    "intro": "I’ve spent years building AI systems that run in production. Now my focus is AI safety research: how these systems fail, how to measure them and how to make them safe. I create content sharing what I learn, and I help startups and enterprises adopt AI.",
+    "intro": [
+      "I’ve built AI systems at {netflix} and as a two-time {yc} founder. Now my focus is AI safety research: how these systems fail, how to measure them and how to make them safe.",
+      "As an applied AI architect, I also help startups and enterprises adopt AI, from choosing the right problems to systems that hold up in production. And I create content sharing what I learn."
+    ],
+    "cta": {
+      "label": "Tell me what you’re building",
+      "email": "work@mossscott.com",
+      "subject": "Working together"
+    },
     "now": "",
     "email": "hello@mossscott.com",
     "portrait": "/portrait.jpg",
@@ -111,14 +119,6 @@
         "url": ""
       },
       "items": []
-    },
-    {
-      "type": "work",
-      "title": "Work with me",
-      "lead": "I’m an applied AI architect. I’ve built AI systems at {netflix} and as a two-time {yc} founder.",
-      "body": "I work with startups and enterprises on AI adoption, from choosing the right problems to systems that hold up in production. I design the architecture, set up the evals and work alongside your engineers until they own it.",
-      "email": "work@mossscott.com",
-      "cta": "Tell me what you’re building"
     }
   ]
 }
