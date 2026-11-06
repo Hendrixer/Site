@@ -39,6 +39,38 @@
       "items": []
     },
     {
+      "type": "apps",
+      "title": "Apps",
+      "items": [
+        {
+          "name": "Direction",
+          "description": "A Mac app for directors",
+          "url": "https://givedirection.ai",
+          "icon": "/icons/direction.png",
+          "tint": "#1A1A1D",
+          "platform": "macOS"
+        }
+      ]
+    },
+    {
+      "type": "oss",
+      "title": "Open source",
+      "link": {
+        "label": "GitHub",
+        "url": ""
+      },
+      "items": []
+    },
+    {
+      "type": "videos",
+      "title": "Videos",
+      "link": {
+        "label": "YouTube",
+        "url": ""
+      },
+      "items": []
+    },
+    {
       "type": "courses",
       "title": "Courses",
       "link": {
@@ -87,38 +119,6 @@
           "date": "2023-11-27"
         }
       ]
-    },
-    {
-      "type": "apps",
-      "title": "Apps",
-      "items": [
-        {
-          "name": "Direction",
-          "description": "A Mac app for directors",
-          "url": "https://givedirection.ai",
-          "icon": "/icons/direction.png",
-          "tint": "#1A1A1D",
-          "platform": "macOS"
-        }
-      ]
-    },
-    {
-      "type": "oss",
-      "title": "Open source",
-      "link": {
-        "label": "GitHub",
-        "url": ""
-      },
-      "items": []
-    },
-    {
-      "type": "videos",
-      "title": "Videos",
-      "link": {
-        "label": "YouTube",
-        "url": ""
-      },
-      "items": []
     }
   ]
 }
