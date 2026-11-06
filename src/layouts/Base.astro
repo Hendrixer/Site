@@ -1,4 +1,6 @@
 ---
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import '../styles/global.css';
 import { profile } from '../lib/content';
 
@@ -10,6 +12,10 @@ interface Props {
 const { title, description = profile.description } = Astro.props;
 const pageTitle = title ? `${title} · ${profile.name}` : profile.name;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+// The portrait doubles as the link preview image (a square "summary" card).
+const shareImage = existsSync(join(process.cwd(), 'public', profile.portrait))
+  ? new URL(profile.portrait, Astro.site)
+  : undefined;
 ---
 
 <!doctype html>
@@ -27,6 +33,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    {shareImage && <meta property="og:image" content={shareImage} />}
+    {shareImage && <meta property="og:image:alt" content={profile.name} />}
     <meta name="twitter:card" content="summary" />
   </head>
   <body>
