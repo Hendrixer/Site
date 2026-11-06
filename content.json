@@ -45,6 +45,8 @@
         {
           "name": "Direction",
           "description": "A Mac app for directors",
+          "about": "A Mac app for making films the way directors do. You write the brief, circle the takes you want and give notes in plain language, like “let it breathe” or “too many star shots.” An AI editor, Claude Code or Codex, cuts the film, answers every note in the next cut and delivers the master, a web copy and captions. You never touch a timeline. It’s open source.",
+          "why": "I make a lot of video, and editing was always the bottleneck. I knew how I wanted a film to feel, but getting there meant hours in a timeline. I built Direction so I could stay in the director’s chair and hand the editor’s job to an agent. It’s also a real test of how far you can trust an agent with creative work.",
           "url": "https://givedirection.ai",
           "icon": "/icons/direction.png",
           "tint": "#1A1A1D",

@@ -51,7 +51,11 @@ const apps = z.strictObject({
     .array(
       z.strictObject({
         name: z.string(),
+        // One line shown next to the name.
         description: z.string(),
+        // Longer copy under the card: what the app is, and why you made it.
+        about: z.string().optional(),
+        why: z.string().optional(),
         url: z.string(),
         // Preview image. Leave it out to use the og:image from the app's site.
         image: z.string().optional(),
