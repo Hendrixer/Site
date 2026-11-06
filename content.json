@@ -105,7 +105,6 @@
         {
           "title": "Build an Agent that Never Sleeps",
           "url": "https://master.dev/courses/background-ai-agents/",
-          "image": "/courses/background-ai-agents.webp",
           "description": "Background agents that observe, act, recover from interruptions and ask for help.",
           "duration": "5h 1m",
           "date": "2026-10-12"
@@ -113,7 +112,6 @@
         {
           "title": "Harness Engineering & Agent Orchestration",
           "url": "https://master.dev/courses/agent-harness/",
-          "image": "/courses/agent-harness.webp",
           "description": "Workflows, sandboxes, memory and multi-agent handoffs for production agents.",
           "duration": "5h 5m",
           "date": "2026-07-01"
@@ -121,7 +119,6 @@
         {
           "title": "Applied AI Engineering Fundamentals",
           "url": "https://master.dev/courses/ai-engineering/",
-          "image": "/courses/ai-engineering.webp",
           "description": "Context engineering, RAG and eval harnesses for AI features that improve over time.",
           "duration": "9h 5m",
           "date": "2026-04-28"
@@ -129,7 +126,6 @@
         {
           "title": "AI Agents Fundamentals, v2",
           "url": "https://master.dev/courses/ai-agents-v2/",
-          "image": "/courses/ai-agents-v2.webp",
           "description": "A CLI agent with tool calling, evals, context management and human approval.",
           "duration": "7h 10m",
           "date": "2026-01-20"
@@ -137,7 +133,6 @@
         {
           "title": "Build AI-Powered Apps with OpenAI and Node.js",
           "url": "https://master.dev/courses/openai-node/",
-          "image": "/courses/openai-node.webp",
           "description": "Chat interfaces, semantic search, document Q&A and function calling with OpenAI.",
           "duration": "3h 34m",
           "date": "2023-11-27"

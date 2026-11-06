@@ -154,7 +154,6 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
             {section.items.map((course) => (
               <li>
                 <a class="row" href={course.url} {...external(course.url)}>
-                  {course.image ? <img class="cimg" src={course.image} alt="" width="44" height="44" loading="lazy" /> : <span class="cimg" aria-hidden="true"></span>}
                   <span class="ctext">
                     <span class="t">{course.title}</span>
                     {course.description && <span class="d">{course.description}</span>}
@@ -460,24 +459,9 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
   }
 
   .courses .row {
-    grid-template-columns: 44px minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 14px;
-    padding: 8px 10px;
-  }
-  .cimg {
-    display: block;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    object-fit: cover;
-    background: var(--hover);
-    outline: 1px solid var(--line);
-    outline-offset: -1px;
-    transition: transform 0.45s var(--ease);
-  }
-  .courses .row:hover .cimg {
-    transform: scale(1.06) rotate(-2deg);
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 24px;
+    padding: 10px 10px;
   }
   .ctext {
     display: grid;
@@ -932,13 +916,11 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
       grid-row: 2;
     }
     .courses .row {
-      grid-template-columns: 44px minmax(0, 1fr);
-      align-items: start;
+      grid-template-columns: minmax(0, 1fr);
     }
     .courses .row .m {
-      grid-column: 2;
       grid-row: 2;
-      margin-top: 4px;
+      margin-top: 6px;
     }
     .dated .row {
       grid-template-columns: minmax(0, 1fr) auto;

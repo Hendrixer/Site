@@ -36,9 +36,9 @@ Item fields for each section type (`?` means optional):
 // "email" and "cta". Items are an optional list of offerings:
 { "title": "Safety and evaluation", "tag?": "AI safety research", "description": "..." }
 
-// "courses": rows with square course art. Put images in public/courses/
+// "courses": text rows, with duration and date on the right
 { "title": "AI Agents Fundamentals, v2", "url": "https://master.dev/courses/ai-agents-v2/",
-  "image?": "/courses/ai-agents-v2.webp", "description?": "...", "duration?": "7h 10m", "date?": "2026-01-20" }
+  "description?": "...", "duration?": "7h 10m", "date?": "2026-01-20" }
 
 // "apps": cards led by a preview image. The build reads the og:image from the app's
 // own site (url), resizes it and serves it from this domain. Set "image" to override it.
