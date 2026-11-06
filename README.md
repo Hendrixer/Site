@@ -23,8 +23,14 @@ Everything on the homepage comes from [`content.json`](content.json).
 Item fields for each section type (`?` means optional):
 
 ```jsonc
-// "research": rows with a date
+// "research": rows with a date, for finished write-ups
 { "title": "Do agents need memory?", "url": "https://...", "date?": "2026-03" }
+
+// "experiments": research still underway, each with its premise. "status" defaults to
+// "In progress". Add "url" once there's a repo or draft to link. When an experiment is
+// written up, move it to "research".
+{ "title": "When everyone is aligned but the system fails", "area?": "Multi-agent alignment",
+  "premise": "...", "status?": "In progress", "url?": "https://github.com/..." }
 
 // "work": shown even with no items. Takes "lead" (the large pitch line), "body",
 // "email" and "cta". Items are an optional list of offerings:

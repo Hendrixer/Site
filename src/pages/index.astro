@@ -101,6 +101,26 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
         </section>
       );
 
+      if (section.type === 'experiments') return (
+        <section id={id} class="in" style={style}>
+          {heading}
+          <ol class="exps">
+            {section.items.map((exp) => (
+              <li class="exp">
+                <div class="xm">
+                  <span>{exp.area}</span>
+                  <span class="xs"><span class="pulse" aria-hidden="true"></span>{exp.status}</span>
+                </div>
+                <h3 class="xt">
+                  {exp.url ? <a class="ul" href={exp.url} {...external(exp.url)}>{exp.title} <span aria-hidden="true">{/^https?:/.test(exp.url) ? '↗' : '→'}</span></a> : exp.title}
+                </h3>
+                <p class="xp" set:html={rich(exp.premise)} />
+              </li>
+            ))}
+          </ol>
+        </section>
+      );
+
       if (section.type === 'work') {
         const mailto = `mailto:${section.email}?subject=${encodeURIComponent('Working together')}`;
         return (
@@ -166,10 +186,10 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
                   {app.preview && app.icon && <span class="icon sm"><img src={app.icon} alt="" width="32" height="32" loading="lazy" /></span>}
                   <span class="atext">
                     <span class="an">{app.name}{app.platform && <span class="tag">{app.platform}</span>}</span>
-                    <span class="cm">{meta(app.description, app.year !== undefined && String(app.year))}</span>
+                    {hostOf(app.url) && <span class="dom">{hostOf(app.url)} ↗</span>}
                   </span>
-                  {hostOf(app.url) && <span class="dom">{hostOf(app.url)} ↗</span>}
                 </div>
+                <span class="cm ad">{meta(app.description, app.year !== undefined && String(app.year))}</span>
               </a>
             ))}
           </div>
@@ -475,6 +495,52 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     line-height: 1.45;
   }
 
+  .exps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .exp {
+    padding: 18px 0 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .xm {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font: 12px/1.3 var(--mono);
+    color: var(--faint);
+  }
+  .xs {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .xs .pulse {
+    width: 6px;
+    height: 6px;
+  }
+  .xt {
+    margin: 8px 0 0;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .xt a span {
+    color: var(--faint);
+  }
+  .xp {
+    margin: 6px 0 0;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+
   .pitch {
     margin: 0 0 12px;
     font-size: 19px;
@@ -639,10 +705,9 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     transform: scale(1.025);
   }
   .arow {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: start;
-    column-gap: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     margin-top: 12px;
   }
   .icon.sm {
@@ -655,6 +720,7 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
   }
   .atext {
     display: grid;
+    gap: 3px;
     min-width: 0;
   }
   .an {
@@ -665,16 +731,19 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     font-weight: 500;
     line-height: 1.35;
   }
-  .atext .cm {
-    margin-top: 2px;
+  .ad {
+    display: block;
+    margin-top: 10px;
     max-width: 52ch;
     line-height: 1.55;
+    text-wrap: pretty;
   }
   .dom {
-    padding-top: 5px;
-    font: 12.5px/1 var(--mono);
+    font: 12px/1.2 var(--mono);
     color: var(--faint);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: color 0.2s;
   }
   .card:hover .dom {
@@ -848,9 +917,6 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     }
     .cards.apps {
       grid-template-columns: 1fr;
-    }
-    .dom {
-      display: none;
     }
     .icon {
       width: 54px;

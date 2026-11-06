@@ -39,6 +39,22 @@
       "items": []
     },
     {
+      "type": "experiments",
+      "title": "Current research",
+      "items": [
+        {
+          "title": "When everyone is aligned but the system fails",
+          "area": "Multi-agent alignment",
+          "premise": "Agents that each behave responsibly can still fail as a group: an incident everyone assumes someone else owns, or a warning that never reaches the one agent able to fix it. I’m running a simulated engineering org of 5 to 20 agents to measure how these failures grow with the team, and whether explicit ownership and escalation rules prevent them."
+        },
+        {
+          "title": "Safety memory for monitoring long-running agents",
+          "area": "AI control",
+          "premise": "A safety monitor can miss a violation when the evidence is spread across sessions, tools or agents: one agent reads a secret, another later sends it out, and each step looks harmless on its own. I’m testing whether a compact, persistent record of what matters for safety catches these as well as replaying the full history, at a fraction of the cost."
+        }
+      ]
+    },
+    {
       "type": "apps",
       "title": "Apps",
       "items": [
@@ -48,6 +64,14 @@
           "url": "https://givedirection.ai",
           "icon": "/icons/direction.png",
           "tint": "#1A1A1D",
+          "platform": "macOS"
+        },
+        {
+          "name": "Somae",
+          "description": "An inbox for everything your agents make. Agents ask when they need you, you review the real work, from a film to a live site, and your notes go straight back to the agent.",
+          "url": "https://getsomae.ai",
+          "icon": "/icons/somae.png",
+          "tint": "#0C0C0C",
           "platform": "macOS"
         }
       ]

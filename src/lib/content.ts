@@ -23,6 +23,26 @@ const research = z.strictObject({
     .default([]),
 });
 
+// Experiments still underway: what each one is testing and why.
+// When one is written up, add it to "research" and remove it here.
+const experiments = z.strictObject({
+  type: z.literal('experiments'),
+  title: z.string().default('Current research'),
+  hidden: z.boolean().default(false),
+  link: link.optional(),
+  items: z
+    .array(
+      z.strictObject({
+        title: z.string(),
+        area: z.string().optional(),
+        premise: z.string(),
+        status: z.string().default('In progress'),
+        url: z.string().optional(),
+      }),
+    )
+    .default([]),
+});
+
 const work = z.strictObject({
   type: z.literal('work'),
   title: z.string().default('Work with me'),
@@ -150,7 +170,7 @@ const schema = z.strictObject({
       })
       .default({ youtube: '', github: '', x: '' }),
   }),
-  sections: z.array(z.discriminatedUnion('type', [research, work, courses, apps, oss, videos])),
+  sections: z.array(z.discriminatedUnion('type', [research, experiments, work, courses, apps, oss, videos])),
 });
 
 const parsed = schema.safeParse(raw);
