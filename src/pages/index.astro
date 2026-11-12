@@ -153,13 +153,17 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
           <ol class="rows courses">
             {section.items.map((course) => (
               <li>
-                <a class="row" href={course.url} {...external(course.url)}>
+                {/* The title link stretches over the row; the code link sits above it. */}
+                <div class="row">
                   <span class="ctext">
-                    <span class="t">{course.title}</span>
+                    <a class="t stretch" href={course.url} {...external(course.url)}>{course.title}</a>
                     {course.description && <span class="d">{course.description}</span>}
                   </span>
-                  <span class="m">{meta(course.duration, course.date && monthYear(course.date))}</span>
-                </a>
+                  <span class="side">
+                    <span class="m">{meta(course.duration, course.date && monthYear(course.date))}</span>
+                    {course.code && <a class="code" href={course.code} {...external(course.code)} aria-label={`Code for ${course.title}`}>Code<span aria-hidden="true">↗</span></a>}
+                  </span>
+                </div>
               </li>
             ))}
           </ol>
@@ -459,9 +463,47 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
   }
 
   .courses .row {
+    position: relative;
     grid-template-columns: minmax(0, 1fr) auto;
     column-gap: 24px;
     padding: 10px 10px;
+  }
+  .stretch::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+  }
+  .stretch:focus-visible {
+    outline: none;
+  }
+  .stretch:focus-visible::after {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+  }
+  .side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .code {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    gap: 4px;
+    margin: -4px -4px;
+    padding: 4px 4px;
+    border-radius: 4px;
+    font: 12.5px/1 var(--mono);
+    color: var(--faint);
+    transition: color 0.2s;
+  }
+  .row:hover .code {
+    color: var(--muted);
+  }
+  .row .code:hover {
+    color: var(--text);
   }
   .ctext {
     display: grid;
@@ -918,8 +960,11 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     .courses .row {
       grid-template-columns: minmax(0, 1fr);
     }
-    .courses .row .m {
+    .courses .row .side {
       grid-row: 2;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 16px;
       margin-top: 6px;
     }
     .dated .row {

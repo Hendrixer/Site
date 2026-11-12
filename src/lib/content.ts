@@ -133,6 +133,8 @@ const courses = z.strictObject({
       z.strictObject({
         title: z.string(),
         url: z.string(),
+        // The course's code, e.g. its GitHub repo. Shown as a separate link.
+        code: z.string().optional(),
         description: z.string().optional(),
         duration: z.string().optional(),
         date: z.coerce.date().optional(),

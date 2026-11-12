@@ -36,8 +36,10 @@ Item fields for each section type (`?` means optional):
 // "email" and "cta". Items are an optional list of offerings:
 { "title": "Safety and evaluation", "tag?": "AI safety research", "description": "..." }
 
-// "courses": text rows, with duration and date on the right
+// "courses": text rows, with duration and date on the right. The row links to "url";
+// "code" adds a separate Code link (the course repo).
 { "title": "AI Agents Fundamentals, v2", "url": "https://master.dev/courses/ai-agents-v2/",
+  "code?": "https://github.com/Hendrixer/agents-v2",
   "description?": "...", "duration?": "7h 10m", "date?": "2026-01-20" }
 
 // "apps": cards led by a preview image. The build reads the og:image from the app's

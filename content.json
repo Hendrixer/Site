@@ -105,6 +105,7 @@
         {
           "title": "Build an Agent that Never Sleeps",
           "url": "https://master.dev/courses/background-ai-agents/",
+          "code": "https://github.com/Hendrixer/background-agents",
           "description": "Background agents that observe, act, recover from interruptions and ask for help.",
           "duration": "5h 1m",
           "date": "2026-10-12"
@@ -112,6 +113,7 @@
         {
           "title": "Harness Engineering & Agent Orchestration",
           "url": "https://master.dev/courses/agent-harness/",
+          "code": "https://github.com/Hendrixer/harness-engineering",
           "description": "Workflows, sandboxes, memory and multi-agent handoffs for production agents.",
           "duration": "5h 5m",
           "date": "2026-07-01"
@@ -119,6 +121,7 @@
         {
           "title": "Applied AI Engineering Fundamentals",
           "url": "https://master.dev/courses/ai-engineering/",
+          "code": "https://github.com/Hendrixer/ai-engineering-fundamentals",
           "description": "Context engineering, RAG and eval harnesses for AI features that improve over time.",
           "duration": "9h 5m",
           "date": "2026-04-28"
@@ -126,6 +129,7 @@
         {
           "title": "AI Agents Fundamentals, v2",
           "url": "https://master.dev/courses/ai-agents-v2/",
+          "code": "https://github.com/Hendrixer/agents-v2",
           "description": "A CLI agent with tool calling, evals, context management and human approval.",
           "duration": "7h 10m",
           "date": "2026-01-20"
