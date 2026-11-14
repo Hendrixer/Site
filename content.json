@@ -12,11 +12,11 @@
   "profile": {
     "name": "Scott Moss",
     "initials": "SM",
-    "tagline": "AI engineer, focused on AI safety research",
-    "description": "Scott Moss is an AI engineer focused on AI safety research. He shares what he learns and helps startups and enterprises adopt AI.",
+    "tagline": "AI engineer, building zero-to-one AI products",
+    "description": "Scott Moss builds zero-to-one AI products and solutions, drawing on work as a two-time Y Combinator founder and at Netflix. He also researches AI safety and shares what he learns.",
     "intro": [
-      "I’ve built and owned AI architecture and product as a two-time {yc} founder and an engineer at {netflix}. Now my focus is AI safety research: how AI systems fail, how to measure them and how to make them safe.",
-      "As an applied AI architect, I also help startups and enterprises adopt AI, from choosing the right problems to systems that hold up in production. And I create content sharing what I learn."
+      "I take AI products and solutions from zero to one. I’ve built and owned AI architecture and product as a two-time {yc} founder and an engineer at {netflix}, from the first prototype to systems that hold up in production.",
+      "As an applied AI architect, I help startups and enterprises do the same, from choosing the right problems to shipping products that work. I also research AI safety: how AI systems fail and how to make them safe. And I create content sharing what I learn."
     ],
     "cta": {
       "label": "Tell me what you’re building",
