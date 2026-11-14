@@ -1,28 +1,33 @@
 ---
 title: An agent harness built for apps
 date: 2026-11-14
-summary: What if apps handed work to your agent, instead of your agent reaching into apps? The app brings its state, its workflows and its tools, and one inbox catches everything that needs you.
+summary: Computer use is a compatibility layer, and coding harnesses are built for code. I think apps need a harness of their own so agents can use them as well as people do.
 ---
 
+import TwoWaysIn from '../../components/ideas/TwoWaysIn.astro';
 import ToolCompose from '../../components/ideas/ToolCompose.astro';
 import TaskSequence from '../../components/ideas/TaskSequence.astro';
 
-Right now most agent integrations go one way: the agent reaches into an app through tools. I keep wondering about the other direction.
+Almost every app is built for one kind of user: a person looking at a screen. I think apps are going to need a second kind of user, the agents working for those people, with the person still in the loop.
 
-What if the app could hand your agent a job? It would pass along the state that matters, the workflows it already has and a set of tools, and the agent figures out how to get it done. Sometimes that means kicking off one of the app's workflows, like "export the report". Sometimes there's no workflow for exactly this, so the agent picks up the app's tools and strings them together into a workflow on the fly.
+Right now an agent can get into an app one of two ways. The first is computer use: it takes a screenshot, finds the button, clicks it, takes another screenshot and checks what happened. I think of that as a backwards compatibility layer. It's great for scripts and OS stuff, and for apps that will never get anything better, but for the real work inside an app it's slow and wasteful. The app already has its state in memory and code for every operation, and the agent is rebuilding all of it from pixels.
+
+<TwoWaysIn />
+
+The other way in is a coding harness like Claude Code or Codex. They're very good at writing code, and they're shaped around it: a person at a terminal, a repo, a shell and a long conversation. When I picture an app putting an agent to work through one of them, I keep hitting things that aren't there:
+
+- The app can't hand off a job and carry on. It should get an ID back right away, keep its UI responsive and hear about progress until a typed result comes back.
+- The app's state is the source of truth, and nothing in the harness knows that. The agent should read a small snapshot of what matters, remember which revision it read and refresh it when it goes stale.
+- The tools should be the app's own operations, and they should run inside the app. Some are full workflows the app already has, like exporting a report. Others are smaller pieces the agent can compose into a new workflow when nothing fits.
+- Long jobs need tracking. Every operation gets an ID, events go both ways and can be replayed after a reconnect, and a crash never makes something run twice.
+- An approval covers the exact action on the exact data. If the data changes after I say yes, it asks again.
 
 <ToolCompose />
 
-Either way, the app stays in charge. Its code does the work, its data stays its own, and anything with a real side effect can stop and ask first. The agent brings the judgment, and a harness in the middle keeps track of what's going on.
+So the harness I keep coming back to sits between apps and your agent. An app registers its workflows and tools, describes its state and hands over a job. The agent picks what to run, the app runs it and reports back, and the harness keeps a record so the whole thing survives a restart.
 
 <TaskSequence />
 
-The part I like most is the inbox. If every app could hand off work this way, there'd be one place to see all of it: what each app asked for, what ran and what's waiting on me. Approve this, answer that, cancel the other thing, without digging through five apps to find out what's stuck.
+What I'd see as a person is one inbox. If every app handed off work this way, there'd be one place showing what each app asked for, what ran and what's waiting on me. Approve this, answer that, cancel the other thing, without digging through five apps to find out what's stuck.
 
-A few things feel important to get right:
-
-- **The app never waits.** It gets an ID back right away and keeps showing progress in its own UI while the agent works.
-- **It survives a restart.** If something crashes mid-job, it picks up where it left off instead of doing things twice.
-- **Approvals mean something.** When I approve an action, I'm approving that exact action on that exact data. If the data has changed since, it asks again.
-
-The app knows its domain, the agent is good at figuring things out, and I only get pulled in when it matters. That split feels right to me.
+An app built this way ends up with a UI for people and an interface for agents, both running on the same state and the same code. Computer use is still there for all the apps that never get the second one.
