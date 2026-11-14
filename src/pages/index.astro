@@ -1,6 +1,7 @@
 ---
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import Glyph from '../components/Glyph.astro';
 import Base from '../layouts/Base.astro';
 import { profile, rich, visibleSections } from '../lib/content';
 import { compact, getStars, monthYear } from '../lib/format';
@@ -113,14 +114,17 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
           <ol class="exps">
             {section.items.map((exp) => (
               <li class="exp">
-                <div class="xm">
-                  <span>{exp.area}</span>
-                  <span class="xs"><span class="pulse" aria-hidden="true"></span>{exp.status}</span>
+                <Glyph name={exp.icon} />
+                <div class="xbody">
+                  <div class="xm">
+                    <span>{exp.area}</span>
+                    <span class="xs"><span class="pulse" aria-hidden="true"></span>{exp.status}</span>
+                  </div>
+                  <h3 class="xt">
+                    {exp.url ? <a class="ul" href={exp.url} {...external(exp.url)}>{exp.title} <span aria-hidden="true">{/^https?:/.test(exp.url) ? '↗' : '→'}</span></a> : exp.title}
+                  </h3>
+                  <p class="xp" set:html={rich(exp.premise)} />
                 </div>
-                <h3 class="xt">
-                  {exp.url ? <a class="ul" href={exp.url} {...external(exp.url)}>{exp.title} <span aria-hidden="true">{/^https?:/.test(exp.url) ? '↗' : '→'}</span></a> : exp.title}
-                </h3>
-                <p class="xp" set:html={rich(exp.premise)} />
               </li>
             ))}
           </ol>
@@ -159,7 +163,8 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
           <ol class="rows entries">
             {section.items.map((idea) => (
               <li>
-                <a class="row" href={`/ideas/${idea.id}/`}>
+                <a class="row idea" href={`/ideas/${idea.id}/`}>
+                  <Glyph name={idea.data.icon} />
                   <span class="ctext">
                     <span class="t">{idea.data.title}{idea.data.draft && <span class="tag">Draft</span>}</span>
                     {idea.data.summary && <span class="d">{idea.data.summary}</span>}
@@ -549,6 +554,16 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     margin-left: 8px;
     vertical-align: 1px;
   }
+  /* Idea rows lead with their icon. */
+  .entries .row.idea {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 16px;
+    padding: 12px 10px;
+  }
+  .row.idea .side {
+    padding-top: 4px;
+  }
 
   .exps {
     list-style: none;
@@ -557,8 +572,15 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     border-top: 1px solid var(--line);
   }
   .exp {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 16px;
     padding: 18px 0 20px;
     border-bottom: 1px solid var(--line);
+  }
+  .xbody {
+    min-width: 0;
   }
   .xm {
     display: flex;
@@ -997,6 +1019,24 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
       align-items: baseline;
       gap: 16px;
       margin-top: 6px;
+    }
+    .entries .row.idea {
+      grid-template-columns: 36px minmax(0, 1fr);
+      column-gap: 14px;
+    }
+    .row.idea .side {
+      grid-column: 2;
+      padding-top: 0;
+    }
+    .row.idea :global(.tile),
+    .exp :global(.tile) {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+    }
+    .exp {
+      grid-template-columns: 36px minmax(0, 1fr);
+      column-gap: 14px;
     }
     .dated .row {
       grid-template-columns: minmax(0, 1fr) auto;

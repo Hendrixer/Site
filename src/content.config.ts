@@ -9,6 +9,8 @@ const post = z.object({
   title: z.string(),
   date: z.coerce.date(),
   summary: z.string().optional(),
+  // Homepage icon: a glyph name from src/components/Glyph.astro, or an image path.
+  icon: z.string().optional(),
   // Drafts show while running `npm run dev` and are left out of the live site.
   draft: z.boolean().default(false),
 });

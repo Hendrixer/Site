@@ -27,10 +27,10 @@ Item fields for each section type (`?` means optional):
 { "title": "Do agents need memory?", "url": "https://...", "date?": "2026-03" }
 
 // "experiments": research still underway, each with its premise. "status" defaults to
-// "In progress". Add "url" once there's a repo or draft to link. When an experiment is
-// written up, move it to "research".
+// "In progress". Add "url" once there's a repo or draft to link. "icon" picks a glyph
+// (see Icons below). When an experiment is written up, move it to "research".
 { "title": "When everyone is aligned but the system fails", "area?": "Multi-agent alignment",
-  "premise": "...", "status?": "In progress", "url?": "https://github.com/..." }
+  "icon?": "agents", "premise": "...", "status?": "In progress", "url?": "https://github.com/..." }
 
 // "work": shown even with no items. Takes "lead" (the large pitch line), "body",
 // "email" and "cta". Items are an optional list of offerings:
@@ -69,7 +69,7 @@ To host a research write-up on the site, add a Markdown file to `src/content/res
 Each idea is a Markdown file in [`src/content/ideas/`](src/content/ideas/). It gets its own page at `/ideas/<filename>/` and a row in the Ideas section of the homepage, newest first. The section stays hidden until there's at least one idea. Move `{ "type": "ideas" }` in `content.json` to move the section.
 
 1. Copy `src/content/ideas/_template.md` to a new file, such as `agent-inbox.md`. The file name becomes the address.
-2. Fill in `title`, `date` and a one-sentence `summary` at the top, then write the idea below in Markdown.
+2. Fill in `title`, `date`, a one-sentence `summary` and optionally an `icon` (see Icons below) at the top, then write the idea below in Markdown.
 3. Run `npm run dev` to preview it. While `draft: true` is set, the idea shows locally with a Draft label but stays off the live site.
 4. Remove `draft: true`, then commit and deploy.
 
@@ -95,6 +95,10 @@ Some text.
 ```
 
 Figures live in [`src/components/ideas/`](src/components/ideas/) and use `Figure.astro` for the frame, caption and step-by-step animation. They follow the site's colors in light and dark mode, and show their final frame when the visitor prefers reduced motion. In `.mdx`, write `&lt;` for a literal `<` in the text.
+
+## Icons
+
+Ideas and Current research items show a small icon on the homepage. Set `icon` to one of the glyphs in [`src/components/Glyph.astro`](src/components/Glyph.astro): `harness`, `goal`, `agents` or `memory`. You can also point it at a square image in `public/`, like `/icons/my-idea.svg`. Leave it out and the item gets a plain default mark. To add a glyph, draw it on the 24×24 grid in `Glyph.astro` next to the others and add its name to `known`.
 
 Put a square photo at `public/portrait.jpg` and it replaces the initials.
 

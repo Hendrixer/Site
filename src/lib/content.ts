@@ -45,6 +45,8 @@ const experiments = z.strictObject({
       z.strictObject({
         title: z.string(),
         area: z.string().optional(),
+        // A glyph name from src/components/Glyph.astro, or an image path.
+        icon: z.string().optional(),
         premise: z.string(),
         status: z.string().default('In progress'),
         url: z.string().optional(),
