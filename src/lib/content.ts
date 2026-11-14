@@ -2,6 +2,7 @@
 // The page renders sections in the order they appear in `sections`,
 // and items in the order they appear in each section's `items`.
 // A section with no items (or "hidden": true) isn't rendered, except Work with me.
+// Ideas take their items from Markdown files in src/content/ideas/ instead.
 import { z } from 'astro/zod';
 import raw from '../../content.json';
 
@@ -21,6 +22,15 @@ const research = z.strictObject({
       }),
     )
     .default([]),
+});
+
+// Ideas are written as Markdown files in src/content/ideas/, one per idea.
+// The section lists them newest first and links each to its own page.
+const ideas = z.strictObject({
+  type: z.literal('ideas'),
+  title: z.string().default('Ideas'),
+  hidden: z.boolean().default(false),
+  link: link.optional(),
 });
 
 // Experiments still underway: what each one is testing and why.
@@ -171,7 +181,7 @@ const schema = z.strictObject({
       })
       .default({ youtube: '', github: '', x: '' }),
   }),
-  sections: z.array(z.discriminatedUnion('type', [research, experiments, work, courses, apps, oss, videos])),
+  sections: z.array(z.discriminatedUnion('type', [research, experiments, ideas, work, courses, apps, oss, videos])),
 });
 
 const parsed = schema.safeParse(raw);
@@ -184,8 +194,9 @@ export const profile = content.profile;
 export type Section = (typeof content.sections)[number];
 
 // Work with me only needs its lead and email, so it shows even without items.
+// Ideas are kept here and dropped on the homepage if there are no idea files.
 export const visibleSections = content.sections.filter(
-  (s) => !s.hidden && (s.items.length > 0 || s.type === 'work'),
+  (s) => !s.hidden && (s.type === 'work' || s.type === 'ideas' || s.items.length > 0),
 );
 
 const escapeAttr = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');

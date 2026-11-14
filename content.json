@@ -77,6 +77,10 @@
       ]
     },
     {
+      "type": "ideas",
+      "title": "Ideas"
+    },
+    {
       "type": "oss",
       "title": "Open source",
       "link": {

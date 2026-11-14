@@ -5,11 +5,13 @@ import Base from '../layouts/Base.astro';
 import { profile, rich, visibleSections } from '../lib/content';
 import { compact, getStars, monthYear } from '../lib/format';
 import { hostOf, previewFor } from '../lib/og';
+import { getIdeas } from '../lib/posts';
 
 // Build-time enrichment:
 // - open source: star counts from GitHub when `repo` is set
 // - apps: a preview image from the app's own site (its og:image) unless `image` is set
-const sections = await Promise.all(
+// - ideas: the Markdown files in src/content/ideas/, newest first
+const enriched = await Promise.all(
   visibleSections.map(async (section) => {
     if (section.type === 'oss') {
       return {
@@ -30,9 +32,13 @@ const sections = await Promise.all(
         ),
       };
     }
+    if (section.type === 'ideas') {
+      return { ...section, items: await getIdeas() };
+    }
     return section;
   }),
 );
+const sections = enriched.filter((s) => s.type !== 'ideas' || s.items.length > 0);
 
 const seen = new Map<string, number>();
 const anchor = (type: string) => {
@@ -147,10 +153,31 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
         );
       }
 
+      if (section.type === 'ideas') return (
+        <section id={id} class="in" style={style}>
+          {heading}
+          <ol class="rows entries">
+            {section.items.map((idea) => (
+              <li>
+                <a class="row" href={`/ideas/${idea.id}/`}>
+                  <span class="ctext">
+                    <span class="t">{idea.data.title}{idea.data.draft && <span class="tag">Draft</span>}</span>
+                    {idea.data.summary && <span class="d">{idea.data.summary}</span>}
+                  </span>
+                  <span class="side">
+                    <span class="m">{monthYear(idea.data.date)}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      );
+
       if (section.type === 'courses') return (
         <section id={id} class="in" style={style}>
           {heading}
-          <ol class="rows courses">
+          <ol class="rows entries">
             {section.items.map((course) => (
               <li>
                 {/* The title link stretches over the row; the code link sits above it. */}
@@ -462,7 +489,7 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     transform: none;
   }
 
-  .courses .row {
+  .entries .row {
     position: relative;
     grid-template-columns: minmax(0, 1fr) auto;
     column-gap: 24px;
@@ -510,13 +537,17 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
     gap: 1px;
     min-width: 0;
   }
-  .courses .t {
+  .entries .t {
     white-space: normal;
     line-height: 1.4;
   }
-  .courses .d {
+  .entries .d {
     font-size: 13.5px;
     line-height: 1.45;
+  }
+  .entries .t .tag {
+    margin-left: 8px;
+    vertical-align: 1px;
   }
 
   .exps {
@@ -957,10 +988,10 @@ const external = (url: string) => (/^https?:\/\//.test(url) ? { target: '_blank'
       grid-column: 1 / -1;
       grid-row: 2;
     }
-    .courses .row {
+    .entries .row {
       grid-template-columns: minmax(0, 1fr);
     }
-    .courses .row .side {
+    .entries .row .side {
       grid-row: 2;
       flex-direction: row;
       align-items: baseline;

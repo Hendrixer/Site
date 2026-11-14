@@ -64,6 +64,26 @@ The build checks `content.json` and stops with a clear message if a field is mis
 
 To host a research write-up on the site, add a Markdown file to `src/content/research/` (with `title`, `date` and `summary` at the top), then add a research item pointing at `/research/<filename>/`.
 
+## Ideas
+
+Each idea is a Markdown file in [`src/content/ideas/`](src/content/ideas/). It gets its own page at `/ideas/<filename>/` and a row in the Ideas section of the homepage, newest first. The section stays hidden until there's at least one idea. Move `{ "type": "ideas" }` in `content.json` to move the section.
+
+1. Copy `src/content/ideas/_template.md` to a new file, such as `agent-inbox.md`. The file name becomes the address.
+2. Fill in `title`, `date` and a one-sentence `summary` at the top, then write the idea below in Markdown.
+3. Run `npm run dev` to preview it. While `draft: true` is set, the idea shows locally with a Draft label but stays off the live site.
+4. Remove `draft: true`, then commit and deploy.
+
+```md
+---
+title: An inbox for agents
+date: 2026-11-14
+summary: One sentence for the homepage.
+draft: true
+---
+
+The idea, in plain Markdown.
+```
+
 Put a square photo at `public/portrait.jpg` and it replaces the initials.
 
 ## Deploys
