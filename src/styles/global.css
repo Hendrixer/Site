@@ -10,6 +10,7 @@
   --line: #e8e8e5;
   --hover: #f1f1ef;
   --green: #2e8a5f;
+  --warn: #b5532e;
   --sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -24,6 +25,7 @@
     --line: #222224;
     --hover: #18181a;
     --green: #4cc38a;
+    --warn: #e38b62;
     color-scheme: dark;
   }
 }
@@ -35,6 +37,7 @@
   --line: #222224;
   --hover: #18181a;
   --green: #4cc38a;
+  --warn: #e38b62;
   color-scheme: dark;
 }
 
@@ -135,6 +138,22 @@ h2 a:hover {
   border-radius: 22%;
   vertical-align: -0.17em;
   box-shadow: 0 0 0 1px var(--line);
+}
+
+/* Code blocks: Shiki emits both themes as variables (see astro.config.mjs). */
+.astro-code,
+.astro-code span {
+  color: var(--shiki-light);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .astro-code,
+  :root:not([data-theme='light']) .astro-code span {
+    color: var(--shiki-dark);
+  }
+}
+:root[data-theme='dark'] .astro-code,
+:root[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark);
 }
 
 .copy {

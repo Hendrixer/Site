@@ -1,0 +1,197 @@
+---
+// Idea: an agent harness built for apps.
+// One app offers both workflows and tools. A job that fits a workflow runs it;
+// a job that doesn't gets a workflow the agent composes from the tools.
+import Figure from './Figure.astro';
+
+const workflows = [
+  { name: 'export_report', show: '2' },
+  { name: 'sync_contacts', show: '' },
+];
+const tools = [
+  { name: 'query_refunds', show: '4' },
+  { name: 'make_chart', show: '5' },
+  { name: 'draft_email', show: '6' },
+  { name: 'send_email', show: '7' },
+];
+const chain = [
+  { name: 'query_refunds', at: 4 },
+  { name: 'make_chart', at: 5 },
+  { name: 'draft_email', at: 6 },
+  { name: 'send_email', at: 7, asks: true },
+];
+---
+
+<Figure
+  n={1}
+  caption="Two jobs from the same app. The first fits a workflow the app already has. The second doesn't, so the agent strings the app's tools together into a new one, and it still asks before anything gets sent."
+>
+  <div class="compose" data-play="8" data-interval="1100" data-hold="3200">
+    <div class="kit">
+      <span class="klabel">the app offers</span>
+      <div class="group">
+        <span class="gname">workflows</span>
+        <span class="items">
+          {workflows.map((w) => <span class="item wf" data-show={w.show || undefined}>{w.name}</span>)}
+        </span>
+      </div>
+      <div class="group">
+        <span class="gname">tools</span>
+        <span class="items">
+          {tools.map((t) => <span class="item" data-show={t.show || undefined}>{t.name}</span>)}
+        </span>
+      </div>
+    </div>
+
+    <div class="job" data-at="1">
+      <span class="jhead">
+        <span class="ask">“Export the Q3 report”</span>
+        <span class="how">uses a workflow</span>
+      </span>
+      <span class="run">
+        <span class="chip wf" data-at="2" data-show="2">export_report</span>
+        <span class="done" data-at="2">✓ done</span>
+      </span>
+    </div>
+
+    <div class="job" data-at="3">
+      <span class="jhead">
+        <span class="ask">“Send the team a chart of this week's refunds”</span>
+        <span class="how">composes tools</span>
+      </span>
+      <span class="run">
+        {chain.map((c, i) => (
+          <>
+            {i > 0 && <span class="sep" data-at={c.at} aria-hidden="true">→</span>}
+            <span class:list={['chip', { asks: c.asks }]} data-at={c.at} data-show={String(c.at)}>
+              {c.name}
+              {c.asks && <span class="lock">asks first</span>}
+            </span>
+          </>
+        ))}
+        <span class="done" data-at="8">✓ done</span>
+      </span>
+    </div>
+  </div>
+</Figure>
+
+<style>
+  .compose {
+    display: grid;
+    gap: 14px;
+    font: 11.5px/1 var(--mono);
+    color: var(--muted);
+  }
+  .kit {
+    display: grid;
+    gap: 10px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .klabel {
+    color: var(--faint);
+  }
+  .group {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+  }
+  .gname {
+    color: var(--faint);
+  }
+  .items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .item,
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--line);
+    white-space: nowrap;
+    transition: color 0.3s, box-shadow 0.3s, opacity 0.35s, transform 0.4s var(--ease);
+  }
+  /* Workflows are pre-built, so they read as solid blocks. */
+  .wf {
+    border-radius: 6px;
+  }
+  .item:global(.cur),
+  .chip:global(.cur) {
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--text);
+  }
+
+  .job {
+    display: grid;
+    gap: 9px;
+    transition: opacity 0.4s;
+  }
+  .jhead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .ask {
+    font: 13.5px/1.4 var(--sans);
+    color: var(--text);
+  }
+  .run {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 5px;
+  }
+  .sep {
+    color: var(--faint);
+    transition: opacity 0.35s;
+  }
+  .lock {
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    color: var(--warn);
+    background: color-mix(in oklab, var(--warn) 12%, transparent);
+  }
+  .done {
+    margin-left: 4px;
+    color: var(--green);
+    transition: opacity 0.35s;
+  }
+  .how {
+    flex: none;
+    color: var(--faint);
+  }
+
+  .compose:global(.playing) .job,
+  .compose:global(.playing) .chip,
+  .compose:global(.playing) .sep,
+  .compose:global(.playing) .done {
+    opacity: 0;
+  }
+  .compose:global(.playing) .chip {
+    transform: translateY(-4px);
+  }
+  .compose:global(.playing) .job:global(.on),
+  .compose:global(.playing) .chip:global(.on),
+  .compose:global(.playing) .sep:global(.on),
+  .compose:global(.playing) .done:global(.on) {
+    opacity: 1;
+    transform: none;
+  }
+  @media (max-width: 560px) {
+    .group {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 6px;
+    }
+    .how {
+      display: none;
+    }
+  }
+</style>

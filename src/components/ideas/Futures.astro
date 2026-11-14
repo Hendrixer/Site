@@ -1,0 +1,187 @@
+---
+// Idea: a goal runtime.
+// Candidate plans for one violation, judged against the same evidence.
+import Figure from './Figure.astro';
+
+type Kind = 'pick' | 'ok' | 'ask' | 'no' | 'meh';
+const options: { name: string; facts: string; verdict: string; kind: Kind }[] = [
+  { name: 'Roll back v218', facts: 'reversible · about 4 min', verdict: 'passes every check', kind: 'pick' },
+  { name: 'Scale checkout 2×', facts: '+$1,400 a day · 6 min', verdict: 'passes · costs more', kind: 'ok' },
+  { name: 'Turn off recommendations', facts: 'about 2% fewer orders', verdict: 'tradeoff · owner decides', kind: 'ask' },
+  { name: 'Fail over the database', facts: 'risks in-flight orders', verdict: 'breaks: never drop an order', kind: 'no' },
+  { name: 'Wait and watch 10 min', facts: 'could be a traffic spike', verdict: '~600 slow checkouts meanwhile', kind: 'meh' },
+];
+const mark: Record<Kind, string> = { pick: '✓', ok: '✓', ask: '?', no: '✕', meh: '–' };
+---
+
+<Figure
+  n={2}
+  caption="A few ways to handle the same problem, including waiting. One breaks a hard rule, one is a tradeoff for a person to make, and the cheapest fix that can be undone wins."
+>
+  <div class="futures" data-play="3" data-interval="1700" data-hold="3800">
+    <div class="now">
+      <span class="nl">now</span>
+      <span class="nv">p95 412 ms</span>
+      <span class="badge">violated</span>
+    </div>
+    <div class="tree" data-at="3">
+      {options.map((o, i) => (
+        <div class:list={['opt', o.kind]} style={`--i:${i}`} data-at="1">
+          <span class="oname">{o.name}</span>
+          <span class="facts">{o.facts}</span>
+          <span class="verdict" data-at="2" style={`--i:${i}`}>
+            <span class="mark" aria-hidden="true">{mark[o.kind]}</span>
+            {o.verdict}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+</Figure>
+
+<style>
+  .futures {
+    font-size: 13.5px;
+  }
+  .now {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: 12px/1 var(--mono);
+  }
+  .nl {
+    color: var(--faint);
+  }
+  .nv {
+    color: var(--text);
+  }
+  .badge {
+    padding: 4px 9px;
+    border-radius: 999px;
+    color: var(--warn);
+    background: color-mix(in oklab, var(--warn) 12%, transparent);
+  }
+
+  .tree {
+    position: relative;
+    margin-top: 6px;
+    padding-left: 22px;
+  }
+  .tree::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 0;
+    bottom: 26px;
+    border-left: 1px solid var(--line);
+  }
+  .opt {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 2px 14px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--line);
+    transition: opacity 0.45s var(--ease), transform 0.45s var(--ease), box-shadow 0.3s;
+    transition-delay: calc(var(--i) * 110ms);
+  }
+  .opt::before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: 50%;
+    width: 13px;
+    border-top: 1px solid var(--line);
+  }
+  .oname {
+    font-weight: 500;
+    color: var(--text);
+  }
+  .facts {
+    grid-column: 1;
+    font: 11.5px/1.4 var(--mono);
+    color: var(--faint);
+  }
+  .verdict {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: 11.5px/1.3 var(--mono);
+    white-space: nowrap;
+    transition: opacity 0.35s;
+    transition-delay: calc(var(--i) * 140ms);
+  }
+  .mark {
+    display: inline-grid;
+    place-items: center;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    font-size: 10.5px;
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
+  .pick .verdict,
+  .ok .verdict {
+    color: var(--green);
+  }
+  .ask .verdict {
+    color: var(--text);
+  }
+  .no .verdict {
+    color: var(--warn);
+  }
+  .meh .verdict {
+    color: var(--muted);
+  }
+
+  /* Step 1: options appear. Step 2: verdicts land. Step 3: the pick stands out. */
+  .futures:global(.playing) .opt {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .futures:global(.playing) .opt:global(.on) {
+    opacity: 1;
+    transform: none;
+  }
+  .futures:global(.playing) .verdict {
+    opacity: 0;
+  }
+  .futures:global(.playing) .verdict:global(.on) {
+    opacity: 1;
+  }
+  .futures:not(:global(.playing)) .pick,
+  .tree:global(.on) .pick {
+    box-shadow: inset 0 0 0 1px var(--green);
+  }
+  .futures:not(:global(.playing)) .no .oname,
+  .tree:global(.on) .no .oname {
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--warn);
+  }
+  .tree:global(.on) .opt:not(.pick) {
+    transition-delay: 0s;
+  }
+  .tree:global(.on) .opt.meh,
+  .tree:global(.on) .opt.no {
+    opacity: 0.6;
+  }
+  @media (max-width: 560px) {
+    .opt {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .verdict {
+      grid-column: 1;
+      grid-row: auto;
+      margin-top: 6px;
+      white-space: normal;
+    }
+  }
+</style>

@@ -1,0 +1,31 @@
+---
+title: A goal runtime
+date: 2026-11-14
+summary: Agents are built around tasks. What if they held onto a goal instead, like "keep checkout fast", one that stays alive, notices when it slips and works out what to do?
+---
+
+import GoalLoop from '../../components/ideas/GoalLoop.astro';
+import Futures from '../../components/ideas/Futures.astro';
+import VerdictTimeline from '../../components/ideas/VerdictTimeline.astro';
+
+Agents are built around tasks: do this thing, tell me when it's done. But a lot of what I actually care about isn't a task. "Keep checkout fast." "Make sure every big customer has a renewal plan a couple of months out." Nobody ever finishes those. You hold onto them, notice when they slip and figure out what to do.
+
+So what if the thing that sticks around isn't the chat or the plan, but the goal itself? You'd write down what should be true, what must never happen along the way, how you'd know it's true and who gets to make the calls. That survives models, tools, handoffs and restarts. Some goals end once they're reached. Others, like keeping checkout fast, just keep running and reopen whenever things drift.
+
+<GoalLoop />
+
+When something changes, it compares the world to the goal. If it's a familiar situation, it does what has worked before. If not, it explores.
+
+<Futures />
+
+I like the idea of several planners throwing out options, including "do nothing yet" and "go find out more first", then judging all of them against the same evidence. Anything that breaks a hard rule is out. Real tradeoffs go to the person who owns them, not the model.
+
+The other piece is being honest about what it knows. A tool call that came back successful isn't proof. It should check what actually happened, and when it can't tell, say so.
+
+<VerdictTimeline />
+
+Satisfied, violated or unknown. I think that third one matters a lot. Most systems quietly treat no news as good news.
+
+Over time it would collect what worked and what didn't and turn that into better rules and procedures, with a person signing off before anything gets more authority. The models don't have to get smarter for the whole thing to get better at acting.
+
+It pairs with my other idea, an [agent harness built for apps](/ideas/app-agent-harness/): the harness runs the jobs, and the goal runtime decides what's worth doing and whether it worked.

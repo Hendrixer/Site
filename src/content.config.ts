@@ -21,10 +21,11 @@ const research = defineCollection({
 });
 
 // Ideas: each Markdown file becomes /ideas/<filename>/ and is listed in the
-// Ideas section of the homepage, newest first. Files starting with _ are
-// ignored, which is how _template.md stays off the site.
+// Ideas section of the homepage, newest first. Use .mdx to place a figure
+// component in the text. Files starting with _ are ignored, which is how
+// _template.md stays off the site.
 const ideas = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.md', base: './src/content/ideas' }),
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ideas' }),
   schema: post,
 });
 

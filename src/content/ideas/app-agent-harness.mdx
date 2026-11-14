@@ -1,0 +1,28 @@
+---
+title: An agent harness built for apps
+date: 2026-11-14
+summary: What if apps handed work to your agent, instead of your agent reaching into apps? The app brings its state, its workflows and its tools, and one inbox catches everything that needs you.
+---
+
+import ToolCompose from '../../components/ideas/ToolCompose.astro';
+import TaskSequence from '../../components/ideas/TaskSequence.astro';
+
+Right now most agent integrations go one way: the agent reaches into an app through tools. I keep wondering about the other direction.
+
+What if the app could hand your agent a job? It would pass along the state that matters, the workflows it already has and a set of tools, and the agent figures out how to get it done. Sometimes that means kicking off one of the app's workflows, like "export the report". Sometimes there's no workflow for exactly this, so the agent picks up the app's tools and strings them together into a workflow on the fly.
+
+<ToolCompose />
+
+Either way, the app stays in charge. Its code does the work, its data stays its own, and anything with a real side effect can stop and ask first. The agent brings the judgment, and a harness in the middle keeps track of what's going on.
+
+<TaskSequence />
+
+The part I like most is the inbox. If every app could hand off work this way, there'd be one place to see all of it: what each app asked for, what ran and what's waiting on me. Approve this, answer that, cancel the other thing, without digging through five apps to find out what's stuck.
+
+A few things feel important to get right:
+
+- **The app never waits.** It gets an ID back right away and keeps showing progress in its own UI while the agent works.
+- **It survives a restart.** If something crashes mid-job, it picks up where it left off instead of doing things twice.
+- **Approvals mean something.** When I approve an action, I'm approving that exact action on that exact data. If the data has changed since, it asks again.
+
+The app knows its domain, the agent is good at figuring things out, and I only get pulled in when it matters. That split feels right to me.

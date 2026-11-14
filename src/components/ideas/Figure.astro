@@ -1,0 +1,116 @@
+---
+// Frame and caption for a figure inside an idea.
+//
+// Animated figures put data-play="<steps>" on an element inside the frame.
+// While it's on screen, the player below counts through the steps and marks
+// children: data-at="3" gets .on from step 3 onwards, and data-show="2 5" gets
+// .cur only on steps 2 and 5. The current step is also exposed as --step.
+// Without JavaScript, or with reduced motion, the figure shows its last step.
+interface Props {
+  n?: number;
+  caption: string;
+}
+const { n, caption } = Astro.props;
+---
+
+<figure class="fig">
+  <div class="box"><slot /></div>
+  <figcaption>{n !== undefined && <span class="num">Fig. {n}</span>}{caption}</figcaption>
+</figure>
+
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  document.querySelectorAll<HTMLElement>('[data-play]').forEach((el) => {
+    const last = Number(el.dataset.play);
+    const interval = Number(el.dataset.interval ?? 1200);
+    const hold = Number(el.dataset.hold ?? 2800);
+    const first = Number(el.dataset.loopFrom ?? 0);
+    const marked = [...el.querySelectorAll<HTMLElement>('[data-at], [data-show]')];
+
+    const set = (step: number) => {
+      el.style.setProperty('--step', String(step));
+      for (const child of marked) {
+        if (child.dataset.at) child.classList.toggle('on', step >= Number(child.dataset.at));
+        if (child.dataset.show) child.classList.toggle('cur', child.dataset.show.split(' ').map(Number).includes(step));
+      }
+    };
+
+    if (reduce) return set(last);
+
+    let step = first;
+    let timer = 0;
+    let visible = false;
+
+    const restart = () => {
+      // Jump back without animating, so a loop looks continuous.
+      el.classList.add('instant');
+      step = first;
+      set(step);
+      void el.offsetWidth;
+      el.classList.remove('instant');
+    };
+
+    const tick = () => {
+      if (!visible) return;
+      if (step >= last) {
+        timer = window.setTimeout(() => {
+          restart();
+          timer = window.setTimeout(tick, 700);
+        }, hold);
+        return;
+      }
+      step += 1;
+      set(step);
+      timer = window.setTimeout(tick, interval);
+    };
+
+    el.classList.add('playing');
+    restart();
+    new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting;
+        window.clearTimeout(timer);
+        if (visible) timer = window.setTimeout(tick, 500);
+      },
+      { threshold: 0.4 },
+    ).observe(el);
+  });
+</script>
+
+<style>
+  .fig {
+    margin: 2.2em 0 2.4em;
+  }
+  .box {
+    position: relative;
+    padding: 22px 22px 20px;
+    border-radius: 14px;
+    background: color-mix(in oklab, var(--hover) 55%, transparent);
+    box-shadow: inset 0 0 0 1px var(--line);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+  figcaption {
+    margin-top: 10px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+  .num {
+    margin-right: 8px;
+    font: 12px var(--mono);
+    color: var(--faint);
+  }
+  .box :global(.instant),
+  .box :global(.instant *) {
+    transition: none !important;
+  }
+  @media (max-width: 560px) {
+    .box {
+      padding: 18px 14px 16px;
+    }
+  }
+</style>

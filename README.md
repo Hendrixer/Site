@@ -84,6 +84,18 @@ draft: true
 The idea, in plain Markdown.
 ```
 
+To put a figure in an idea, name the file `.mdx` instead of `.md`, import the component under the frontmatter and place it like a tag:
+
+```mdx
+import GoalLoop from '../../components/ideas/GoalLoop.astro';
+
+Some text.
+
+<GoalLoop />
+```
+
+Figures live in [`src/components/ideas/`](src/components/ideas/) and use `Figure.astro` for the frame, caption and step-by-step animation. They follow the site's colors in light and dark mode, and show their final frame when the visitor prefers reduced motion. In `.mdx`, write `&lt;` for a literal `<` in the text.
+
 Put a square photo at `public/portrait.jpg` and it replaces the initials.
 
 ## Deploys

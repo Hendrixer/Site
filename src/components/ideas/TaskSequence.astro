@@ -1,0 +1,244 @@
+---
+// Idea: an agent harness built for apps.
+// One task moving between the app, the harness and the inbox, step by step.
+import Figure from './Figure.astro';
+
+const lanes = ['App', 'Harness', 'Inbox'];
+const x = [1 / 6, 1 / 2, 5 / 6];
+
+type Row = { from: 0 | 1 | 2; to: 0 | 1 | 2; label: string; status: string; tone?: 'ok' | 'wait' };
+const rows: Row[] = [
+  { from: 0, to: 1, label: 'submit task', status: 'queued' },
+  { from: 1, to: 0, label: 'task_7f3', status: 'queued' },
+  { from: 1, to: 1, label: 'model picks a workflow', status: 'planning' },
+  { from: 1, to: 0, label: 'start op_21', status: 'running export_report' },
+  { from: 0, to: 1, label: 'step 2 of 4', status: 'running · step 2 of 4' },
+  { from: 0, to: 1, label: 'needs approval', status: 'blocked · needs approval', tone: 'wait' },
+  { from: 1, to: 2, label: 'email 3 people?', status: 'waiting on you', tone: 'wait' },
+  { from: 2, to: 1, label: 'approved', status: 'approved', tone: 'ok' },
+  { from: 1, to: 0, label: 'resume @ rev 42', status: 'running · step 3 of 4' },
+  { from: 0, to: 1, label: 'op_21 done', status: 'running · step 4 of 4' },
+  { from: 1, to: 0, label: 'typed result', status: 'complete · report.pdf', tone: 'ok' },
+];
+const last = rows.length;
+---
+
+<Figure
+  n={2}
+  caption="One job handed from an app to the agent. The app keeps doing the work and showing progress (the line at the bottom), and I only get pulled in when something needs a yes."
+>
+  <div class="seq" data-play={last} data-interval="1150" data-hold="3000">
+    <div class="heads">
+      {lanes.map((name, i) => (
+        <span class="head" style={`--x:${x[i]}`}>
+          {name}
+          {i === 2 && <span class="ping" data-show="7" aria-hidden="true"></span>}
+        </span>
+      ))}
+    </div>
+
+    <div class="track">
+      {x.map((pos) => <span class="lifeline" style={`--x:${pos}`} aria-hidden="true"></span>)}
+      {rows.map((r, i) => {
+        const a = Math.min(x[r.from], x[r.to]);
+        const b = Math.max(x[r.from], x[r.to]);
+        return (
+          <div
+            class:list={['row', r.tone, r.from === r.to ? 'self' : r.to > r.from ? 'right' : 'left']}
+            style={`--a:${a};--b:${b}`}
+            data-at={i + 1}
+            data-show={String(i + 1)}
+          >
+            {r.from === r.to ? (
+              <span class="note">{r.label}</span>
+            ) : (
+              <>
+                <span class="label">{r.label}</span>
+                <span class="arrow" aria-hidden="true"></span>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+
+    <div class="status">
+      <span class="sid">task_7f3</span>
+      <span class="stext">
+        <span data-show="0">no task yet</span>
+        {rows.map((r, i) => (
+          <span class:list={[r.tone, { cur: i === last - 1 }]} data-show={String(i + 1)}>{r.status}</span>
+        ))}
+      </span>
+    </div>
+  </div>
+</Figure>
+
+<style>
+  .seq {
+    font: 11.5px/1.4 var(--mono);
+    color: var(--muted);
+  }
+  .heads {
+    position: relative;
+    height: 30px;
+  }
+  .head {
+    position: absolute;
+    left: calc(var(--x) * 100%);
+    top: 0;
+    transform: translateX(-50%);
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--line);
+    font: 500 12.5px/1 var(--sans);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .ping {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--warn);
+    opacity: 0;
+    transform: scale(0.4);
+    transition: opacity 0.25s, transform 0.4s var(--ease);
+  }
+  .ping:global(.cur) {
+    opacity: 1;
+    transform: none;
+  }
+
+  .track {
+    position: relative;
+    padding: 8px 0 6px;
+  }
+  .lifeline {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--x) * 100%);
+    border-left: 1px dashed var(--line);
+  }
+  .row {
+    position: relative;
+    height: 34px;
+    transition: opacity 0.35s;
+  }
+  .label {
+    position: absolute;
+    top: 4px;
+    left: calc((var(--a) + var(--b)) / 2 * 100%);
+    transform: translateX(-50%);
+    white-space: nowrap;
+    transition: color 0.3s;
+  }
+  .arrow {
+    position: absolute;
+    top: 23px;
+    left: calc(var(--a) * 100% + 6px);
+    width: calc((var(--b) - var(--a)) * 100% - 12px);
+    height: 1px;
+    background: currentColor;
+    color: var(--faint);
+    transition: transform 0.55s var(--ease), color 0.3s;
+  }
+  .right .arrow {
+    transform-origin: left;
+  }
+  .left .arrow {
+    transform-origin: right;
+  }
+  .arrow::after {
+    content: '';
+    position: absolute;
+    top: -3.5px;
+    border: 4px solid transparent;
+  }
+  .right .arrow::after {
+    right: -1px;
+    border-right: 0;
+    border-left: 6px solid currentColor;
+  }
+  .left .arrow::after {
+    left: -1px;
+    border-left: 0;
+    border-right: 6px solid currentColor;
+  }
+  .note {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--line);
+    white-space: nowrap;
+    transition: color 0.3s, box-shadow 0.3s;
+  }
+
+  /* The current step is drawn in full color; earlier steps fade back. */
+  .row:global(.cur) .label,
+  .row:global(.cur) .note {
+    color: var(--text);
+  }
+  .row:global(.cur) .arrow {
+    color: var(--text);
+  }
+  .row.ok:global(.cur) .arrow,
+  .row.ok:global(.cur) .label {
+    color: var(--green);
+  }
+  .row.wait:global(.cur) .arrow,
+  .row.wait:global(.cur) .label {
+    color: var(--warn);
+  }
+  .row.self:global(.cur) .note {
+    box-shadow: inset 0 0 0 1px var(--text);
+  }
+  .seq:global(.playing) .row {
+    opacity: 0;
+  }
+  .seq:global(.playing) .row:global(.on) {
+    opacity: 0.45;
+  }
+  .seq:global(.playing) .row:global(.cur) {
+    opacity: 1;
+  }
+  .seq:global(.playing) .arrow {
+    transform: scaleX(0);
+  }
+  .seq:global(.playing) .row:global(.on) .arrow {
+    transform: none;
+  }
+
+  .status {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .sid {
+    color: var(--faint);
+  }
+  .stext span {
+    display: none;
+    color: var(--text);
+  }
+  .stext span:global(.cur) {
+    display: inline;
+  }
+  .stext .ok {
+    color: var(--green);
+  }
+  .stext .wait {
+    color: var(--warn);
+  }
+</style>
