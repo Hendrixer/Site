@@ -2,7 +2,7 @@
 title: An agent harness built for apps
 icon: harness
 date: 2026-11-14
-summary: Computer use is a compatibility layer, and coding harnesses are built for code. I think apps need a harness of their own so agents can use them as well as people do.
+summary: Agents can already get into apps through computer use, CLIs and MCP. I think apps need a harness with a contract built for agents working inside them, so an app can hand an agent work and keep it safe.
 ---
 
 import TwoWaysIn from '../../components/ideas/TwoWaysIn.astro';
@@ -11,16 +11,21 @@ import TaskSequence from '../../components/ideas/TaskSequence.astro';
 
 Almost every app is built for one kind of user: a person looking at a screen. I think apps are going to need a second kind of user, the agents working for those people, with the person still in the loop.
 
-Right now an agent can get into an app one of two ways. The first is computer use: it takes a screenshot, finds the button, clicks it, takes another screenshot and checks what happened. I think of that as a backwards compatibility layer. It's great for scripts and OS stuff, and for apps that will never get anything better, but for the real work inside an app it's slow and wasteful. The app already has its state in memory and code for every operation, and the agent is rebuilding all of it from pixels.
+The most general way for an agent to get into an app today is computer use: it takes a screenshot, finds the button, clicks it, takes another screenshot and checks what happened. I think of that as a backwards compatibility layer. It's great for scripts and OS stuff, and for apps that will never get anything better, but for the real work inside an app it's slow and wasteful. The app already has its state in memory and code for every operation, and the agent is rebuilding all of it from pixels.
 
 <TwoWaysIn />
 
-The other way in is a coding harness like Claude Code or Codex. They're very good at writing code, and they're shaped around it: a person at a terminal, a repo, a shell and a long conversation. When I picture an app putting an agent to work through one of them, I keep hitting things that aren't there:
+There are better ways in when the app offers them. If an app has a CLI, or an API when it's hosted, an agent can call it as a tool, and the app can wrap either one in an MCP server that any agent can pick up. That's how a coding agent works with something like Blender or DaVinci Resolve today. It clicks through the UI, runs scripts through the app's command line or scripting API, or talks to an MCP server built for it.
+
+A harness for apps would still hand the agent tools that way. What I'd want to rethink is the contract between the app and the agent: what shape a job takes, what each side can count on and what the person sees while it runs. It should be designed for apps that expect agents to work inside them, and for apps that hand agents work of their own. It also has to be safe, because these agents run on someone's machine with access to their files and their shell.
+
+Coding harnesses like Claude Code and Codex are where most of this happens now. They're very good at writing code, and they're shaped around it: a person at a terminal, a repo, a shell and a long conversation. When I picture an app putting an agent to work through one of them, I keep hitting things that aren't there:
 
 - The app can't hand off a job and carry on. It should get an ID back right away, keep its UI responsive and hear about progress until a typed result comes back.
 - The app's state is the source of truth, and nothing in the harness knows that. The agent should read a small snapshot of what matters, remember which revision it read and refresh it when it goes stale.
 - The tools should be the app's own operations, and they should run inside the app. Some are full workflows the app already has, like exporting a report. Others are smaller pieces the agent can compose into a new workflow when nothing fits.
 - Long jobs need tracking. Every operation gets an ID, events go both ways and can be replayed after a reconnect, and a crash never makes something run twice.
+- The agent can reach my whole machine, so a job from an app comes with limits. It gets that app's tools and the data the job needs, and anything more needs my OK.
 - An approval covers the exact action on the exact data. If the data changes after I say yes, it asks again.
 
 <ToolCompose />
